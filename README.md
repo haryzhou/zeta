@@ -168,7 +168,7 @@ zeta tutorial
                            code      =>  "$ENV{ZIXAPP_HOME}/libexec/dispatch.pl",
                            para      =>  [],
                            reap      =>  1,
-                           size      =>  1,
+                           size      =>  2,
                        },
 
                        Zworker => {
@@ -177,7 +177,7 @@ zeta tutorial
                            code      =>  "$ENV{ZIXAPP_HOME}/libexec/worker.pl",
                            para      =>  [],
                            reap      =>  1,
-                           size      =>  1,
+                           size      =>  2,
                        },
                  }
             };
@@ -197,7 +197,7 @@ zeta tutorial
 
     3.4、libexec开发,  进入libexec目录
 
-         3.4.1、zeta辅助配置文件-主控加载plugin文件编辑
+         3.4.1、zeta辅助配置文件-主控加载plugin文件, 编辑plugin.pl
 
                 use Zeta::Run;
 
@@ -205,7 +205,7 @@ zeta tutorial
                 helper  tapp_config => { $cfg; }; 
                 helper  parent_func => { zlogger->debug( "parent_func is called" ); }; 
 
-         3.4.2、zeta辅助配置文件-主控loop
+         3.4.2、zeta辅助配置文件-主控loop, 编辑main.pl
 
                 use Zeta::Run;
                 use POSIX qw/pause/;
