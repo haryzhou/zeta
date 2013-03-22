@@ -18,26 +18,53 @@ zeta运行原理
 
 2、读配置文件$APP_HOME/conf/zeta.conf, 配置文件里主要包含以下信息：
 
-    2.1、kernel配置
-         2.1.1、pid文件
-         2.1.2、运行模式:process_tree, logger, loggerd
-         2.1.3、日志路径、级别
-         2.1.4、插件加载钩子文件
-         2.1.5、主控函数钩子文件以及参数
-         2.1.6、预先建立的管道
-         2.1.7、主控进程的显示名称(prctl name)
+    2.1、zeta.conf主要包含两个部分配置kernel与module
 
-    2.2、module配置
-         2.2.1、 reader: STDIN从哪个管道读
-         2.2.2、 writer: STDOUT往哪个管道写
-         2.2.3、 mreader: 从哪些管道读
-         2.2.4、 mwriter: 往哪些管道写
-         2.2.5、 code: 模块钩子函数文件
-         2.2.6、 exec: 模块可执行文件(code, exec不能同时有)
-         2.2.7、 para: 模块钩子函数参数、或是模块可执行文件参数
-         2.2.8、 reap: 此模块的进程异常退出后是否自动重启
-         2.2.9、 size: 次模块启动几个进程
-         2.2.10、plugin: 子进程插件{ plugin_name => para, ... }
+         {
+                 kernel => {
+                        pidfile     => "$ENV{TAPP_HOME}/log/zeta.pid",
+                        mode        => 'logger',
+                        logurl      => "file://$ENV{TAPP_HOME}/log/zeta.log",
+                        loglevel    => 'DEBUG',
+                        channel     => [ qw/dispatch/ ],
+                        name        => 'Zixapp',
+                        plugin      => "$ENV{TAPP_HOME}/libexec/plugin.pl",
+                        main        => "$ENV{TAPP_HOME}/libexec/main.pl",
+                        args        => [ ],
+                 },
+
+                 module => {
+                       Zdispatch => {
+                           writer    =>  'dispatch',
+                           plugin    =>  { child => undef, },
+                           code      =>  "$ENV{ZIXAPP_HOME}/libexec/dispatch.pl",
+                           para      =>  [],
+                           reap      =>  1,
+                           size      =>  1,
+                       },
+                 },
+         };
+
+    2.2、zeta - kernel配置
+         2.2.1、pid文件
+         2.2.2、运行模式:process_tree, logger, loggerd
+         2.2.3、日志路径、级别
+         2.2.4、插件加载钩子文件
+         2.2.5、主控函数钩子文件以及参数
+         2.2.6、预先建立的管道
+         2.2.7、主控进程的显示名称(prctl name)
+
+    2.3、zeta - module配置
+         2.3.1、 reader: STDIN从哪个管道读
+         2.3.2、 writer: STDOUT往哪个管道写
+         2.3.3、 mreader: 从哪些管道读
+         2.3.4、 mwriter: 往哪些管道写
+         2.3.5、 code: 模块钩子函数文件
+         2.3.6、 exec: 模块可执行文件(code, exec不能同时有)
+         2.3.7、 para: 模块钩子函数参数、或是模块可执行文件参数
+         2.3.8、 reap: 此模块的进程异常退出后是否自动重启
+         2.3.9、 size: 次模块启动几个进程
+         2.3.10、plugin: 子进程插件{ plugin_name => para, ... }
 
 3、读完配置后, zeta会加载:
     
@@ -47,8 +74,8 @@ zeta运行原理
 
 4、zeta为每个模块fork相应数量的子进程, 同时:
 
-    4.1、每个子进程要么用exec对应的文件执行exec($efile)， 
-    4.2、要么调用code.pl返回的loop函数指针
+    4.1、每个子进程要么用exec对应的文件执行exec($efile).
+    4.2、要么调用code.pl返回的loop函数指针, 子进程在执行这个loop函数之前会加载进程插件， 如果子进程有插件配置的话.
 
 5、zeta然后调用main.pl返回的函数指针
 
