@@ -226,6 +226,7 @@ zeta tutorial
                         zkernel->child_func();     # 子进程加载的插件函数
                         zkernel->parent_func();    # 父进程加载的插件函数
                         print STDOUT $msg, "\n";    
+                        $type = 0;
                     }
                 };
         
@@ -270,4 +271,8 @@ zeta tutorial
     4.5  tail -f Zworker.0.log
     4.6  测试, perl t/qsend.t
     4.7  stopall
+
+5、整个工程， 参见$ZETA_HOME/t/example/tapp
+
+
 
