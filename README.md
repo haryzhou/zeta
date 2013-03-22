@@ -202,8 +202,8 @@ zeta tutorial
                 use Zeta::Run;
 
                 my $cfg = do "$ENV{TAPP_HOME}/conf/tapp.conf";
-                helper  tapp_config => { $cfg; }; 
-                helper  parent_func => { zlogger->debug( "parent_func is called" ); }; 
+                helper  tapp_config => sub { $cfg; }; 
+                helper  parent_func => sub { zlogger->debug( "parent_func is called" ); }; 
 
          3.4.2、zeta辅助配置文件-主控loop, 编辑main.pl
 
