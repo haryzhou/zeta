@@ -232,11 +232,12 @@ zeta tutorial
 
 
 4、观察日志、运行、停止
-   
-    4.1  runall
-    4.2  cd $TAPP_HOME/log
-    4.3  tail -f Zworker.0.log
-    4.4  测试, perl t/qsend.t
-    4.3  stopall
 
+    4.1  cd ~/workspace/tapp/etc
+    4.2  . profile.mak
+    4.3  runall
+    4.4  cd $TAPP_HOME/log
+    4.5  tail -f Zworker.0.log
+    4.6  测试, perl t/qsend.t
+    4.7  stopall
 
