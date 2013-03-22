@@ -90,16 +90,24 @@ zeta tutorial
 
 2、开始建立应用结构
 
-   2.1、建立应用目录
-  
-       mkdir -p conf etc libexec plugin log sbin 
+   2.1、建立应用tapp的目录
+ 
+       midir -p ~/workspace/tapp 
+       cd ~/workspace/tapp
+       mkdir -p conf etc libexec plugin log sbin t
+
+   2.2、安装zeta
+
+       mkdir ~/opt
+       cd ~/opt
+       git clone https://github.com/haryzhou/zeta.git
 
 3、开始配置、开发
 
     3.1、etc设置 
         进入etc目录, vi profile.mak, 添加:
-        export ZETA_HOME=zeta安装目录
-        export TAPP_HOME=你的zeta应用的home目录
+        export ZETA_HOME=~/opt/zeta
+        export TAPP_HOME=~/workspace/tapp
         export PERL5LIB=$ZETA_HOME/lib:$TAPP_HOME/lib
         export PATH=$ZETA_HOME/bin:$TAPP_HOME/bin:$PATH
 
@@ -110,11 +118,125 @@ zeta tutorial
             };
 
         3.2.2、编辑zeta主配置文件zeta.conf
+
             {
-                 kernel => {}
-            }
+                 kernel => {
+                        pidfile     => "$ENV{TAPP_HOME}/log/zeta.pid",
+                        mode        => 'logger',
+                        logurl      => "file://$ENV{TAPP_HOME}/log/zeta.log",
+                        loglevel    => 'DEBUG',
+                        channel     => [ qw/dispatch/ ],
+                        name        => 'Zixapp',
+                        plugin      => "$ENV{TAPP_HOME}/libexec/plugin.pl",
+                        main        => "$ENV{TAPP_HOME}/libexec/main.pl",
+                        args        => [ ],
+                 },
+
+                 module => {
+                       Zdispatch => {
+                           writer    =>  'dispatch',
+                           plugin    =>  { child => undef, },
+                           code      =>  "$ENV{ZIXAPP_HOME}/libexec/dispatch.pl",
+                           para      =>  [],
+                           reap      =>  1,
+                           size      =>  1,
+                       },
+
+                       Zworker => {
+                           reader    =>  'dispatch',
+                           plugin    =>  undef,
+                           code      =>  "$ENV{ZIXAPP_HOME}/libexec/worker.pl",
+                           para      =>  [],
+                           reap      =>  1,
+                           size      =>  1,
+                       },
+                 }
+            };
+
+    3.3、plugin开发,  进入plugin目录, 编辑child.plugin
+
+         use Zeta::Run;
+         
+         helper child_func => sub {
+             zlogger->debug("child_func is called");
+         };
+
+         # plugin initor
+         sub {
+             1;
+         };
+
+    3.4、libexec开发,  进入libexec目录
+
+         3.4.1、zeta辅助配置文件-主控加载plugin文件编辑
+
+                use Zeta::Run;
+
+                my $cfg = do "$ENV{TAPP_HOME}/conf/tapp.conf";
+                helper  tapp_config => { $cfg; }; 
+                helper  parent_func => { zlogger->debug( "parent_func is called" ); }; 
+
+         3.4.2、zeta辅助配置文件-主控loop
+
+                use Zeta::Run;
+                use POSIX qw/pause/;
+                sub {
+                    while(1) { pause(); }
+                };
+
+         3.4.3、dispatch模块开发, 编辑dispatch.pl
+
+                use Zeta::Run;
+                use Zeta::IPC::MsgQ;
+                sub {
+                    my $q = Zeta::IPC::MsgQ->new(zkernel->tapp_config->{qkey});
+                    my $msg;
+                    my $type = 0;
+                    while($q->recv(\$msg, \$type)) {
+                        zkernel->child_func();     # 子进程加载的插件函数
+                        zkernel->parent_func();    # 父进程加载的插件函数
+                        print STDOUT $msg, "\n";    
+                    }
+                };
         
+         3.4.4、worker模块开发, 编辑worker.pl
+            
+                use Zeta::Run;
+                sub {
+                    while(<STDIN>) {
+                        zlogger->debug("got job[$_]");
+                    }
+                };
+
+
+    3.5、测试驱动开发,  进入t目录, 编辑qsend.t
+
+         use Zeta::IPC::MsgQ;
+ 
+         my $cfg = do "$ENV{TAPP_HOME}/conf/tapp.conf";
+         my $q = Zeta::IPC::MsgQ->new($cfg->{qkey});
+
+         $q->send("job [" . localtime() . ]", $$);
+
+    3.6、sbin开发,  进入sbin目录 
+  
+         4.4.1、runall开发, 编辑runall
+
+                cd $TAPP_HOME/log;
+                zeta -f $TAPP_HOME/conf/zeta.conf
+
+         4.4.1、stopall开发
+         
+                cd $TAPP_HOME/log;
+                kill `cat zeta.pid`;
+
 
 4、观察日志、运行、停止
    
+    4.1  runall
+    4.2  cd $TAPP_HOME/log
+    4.3  tail -f Zworker.0.log
+    4.4  测试, perl t/qsend.t
+    4.3  stopall
+
 
