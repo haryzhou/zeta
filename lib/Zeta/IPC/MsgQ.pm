@@ -74,7 +74,7 @@ sub send {
 
     # warn "begin msgsnd($$self, $msg, $mtype)";
     unless ( msgsnd( $$self, pack( "l! a*", $mtype, $msg ), IPC_NOWAIT ) ) {
-        if ( $! =~ /Resource temporarily unavailable/ ) {
+        if ( $!{EAGAIN} ) {
             warn "queue $$self is full, message dropped";
             return $self;
         }
@@ -95,7 +95,7 @@ sub recv {
 
 RETRY:
     unless ( msgrcv( $$self, $$dref, 8192, $$tref, MSG_NOERROR ) ) {
-        if ( $! =~ /Interrupted system call/ ) {
+        if ( $!{EINTR} ) {
             goto RETRY;
         }
         cluck "msgrcv error";
