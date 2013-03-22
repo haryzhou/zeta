@@ -4,6 +4,7 @@ use strict;
 use warnings;
 
 use Carp qw/cluck/;
+use Errno;
 use IPC::SysV qw(IPC_NOWAIT MSG_NOERROR S_IRUSR S_IWUSR IPC_CREAT IPC_EXCL IPC_STAT IPC_RMID);
 
 #
@@ -20,7 +21,7 @@ sub new {
 
     my $id = msgget( $key, S_IRUSR | S_IWUSR | IPC_CREAT | IPC_EXCL );
     unless ( defined $id ) {
-        if ( $! =~ /File exists/ ) {
+        if ( $!{EEXIST} ) {
             $id = msgget( $key, S_IRUSR | S_IWUSR );
             unless ( defined $id ) {
                 cluck "msgget error: [$!]";

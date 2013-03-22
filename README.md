@@ -138,7 +138,8 @@ zeta tutorial
         export ZETA_HOME=~/opt/zeta
         export TAPP_HOME=~/workspace/tapp
         export PERL5LIB=$ZETA_HOME/lib:$TAPP_HOME/lib
-        export PATH=$ZETA_HOME/bin:$TAPP_HOME/bin:$PATH
+        export PATH=$ZETA_HOME/bin:$TAPP_HOME/sbin:$PATH
+        export PLUGIN_PATH=$TAPP_HOME/plugin
 
     3.2、conf设置, 进入conf目录
         3.2.1、编辑应用主配置文件tapp.conf
@@ -245,7 +246,7 @@ zeta tutorial
          my $cfg = do "$ENV{TAPP_HOME}/conf/tapp.conf";
          my $q = Zeta::IPC::MsgQ->new($cfg->{qkey});
 
-         $q->send("job [" . localtime() . ]", $$);
+         $q->send('job [' . localtime() . ']', $$);
 
     3.6、sbin开发,  进入sbin目录 
   
