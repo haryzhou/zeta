@@ -37,7 +37,7 @@ zeta运行原理
                        Zdispatch => {
                            writer    =>  'dispatch',
                            plugin    =>  { child => undef, },
-                           code      =>  "$ENV{ZIXAPP_HOME}/libexec/dispatch.pl",
+                           code      =>  "$ENV{TAPP_HOME}/libexec/dispatch.pl",
                            para      =>  [],
                            reap      =>  1,
                            size      =>  1,
@@ -165,7 +165,7 @@ zeta tutorial
                        Zdispatch => {
                            writer    =>  'dispatch',
                            plugin    =>  { child => undef, },
-                           code      =>  "$ENV{ZIXAPP_HOME}/libexec/dispatch.pl",
+                           code      =>  "$ENV{TAPP_HOME}/libexec/dispatch.pl",
                            para      =>  [],
                            reap      =>  1,
                            size      =>  2,
@@ -174,7 +174,7 @@ zeta tutorial
                        Zworker => {
                            reader    =>  'dispatch',
                            plugin    =>  undef,
-                           code      =>  "$ENV{ZIXAPP_HOME}/libexec/worker.pl",
+                           code      =>  "$ENV{TAPP_HOME}/libexec/worker.pl",
                            para      =>  [],
                            reap      =>  1,
                            size      =>  2,
