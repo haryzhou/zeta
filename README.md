@@ -19,7 +19,7 @@ zeta运行原理
 2、读配置文件$APP_HOME/conf/zeta.conf, 配置文件里主要包含以下信息：
 
     2.1、zeta.conf主要包含两个部分配置kernel与module
-
+         for example: 
          {
                  kernel => {
                         pidfile     => "$ENV{TAPP_HOME}/log/zeta.pid",
@@ -74,8 +74,8 @@ zeta运行原理
 
 4、zeta为每个模块fork相应数量的子进程, 同时:
 
-    4.1、每个子进程要么用exec对应的文件执行exec($efile).
-    4.2、要么调用code.pl返回的loop函数指针, 子进程在执行这个loop函数之前会加载进程插件， 如果子进程有插件配置的话.
+    4.1、每个子进程要么用exec对应的文件执行exec($file).
+    4.2、要么调用code.pl返回的loop函数指针, 子进程在执行这个loop函数之前会加载子进程插件，如果子进程有插件配置的话.
 
 5、zeta然后调用main.pl返回的函数指针
 
@@ -143,13 +143,16 @@ zeta tutorial
 
     3.2、conf设置, 进入conf目录
         3.2.1、编辑应用主配置文件tapp.conf
+
+            # 此文件是应用的集中配置点，应用的所有参数都在这里集中配置
             {
-               qkey => 9898,
+               qkey => 9898,   # 任务消息队列key
             };
 
         3.2.2、编辑zeta主配置文件zeta.conf
 
             {
+                 # 核心配置
                  kernel => {
                         pidfile     => "$ENV{TAPP_HOME}/log/zeta.pid",
                         mode        => 'logger',
@@ -161,7 +164,8 @@ zeta tutorial
                         main        => "$ENV{TAPP_HOME}/libexec/main.pl",
                         args        => [ ],
                  },
-
+           
+                 # 模块列表配置
                  module => {
                        Zdispatch => {
                            writer    =>  'dispatch',
@@ -186,12 +190,12 @@ zeta tutorial
     3.3、plugin开发,  进入plugin目录, 编辑child.plugin
 
          use Zeta::Run;
-         
+        
          helper child_func => sub {
              zlogger->debug("child_func is called");
          };
 
-         # plugin initor
+         # 插件的初始化函数
          sub {
              1;
          };
