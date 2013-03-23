@@ -7,7 +7,7 @@ zeta运行原理
 
 1、规范
 
-    1.1、应用的HOME目录是$APP_HOME
+    1.1、假设你要开发的应用的HOME目录是$APP_HOME
 
     1.2、主要配置文件:
          1.2.1、$APP_HOME/conf/zeta.conf         : zeta主配置文件
