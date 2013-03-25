@@ -41,6 +41,7 @@ sub ini_parse {
             else {          #  遇到普通行, 多行值最后一行
                 $cur_val .= $_;
                 $cur_val =~ s/\s+/ /g;
+                $cur_val =~ s/\s+$//;
                 $ini->{$cur_section}->{$cur_key} = $cur_val;
                 $mul = 0;    # 结束多行状态
                 next;
