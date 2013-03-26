@@ -1,4 +1,5 @@
-#!/usr/bin/perl
+package Zeta::Command::run;
+
 use strict;
 use warnings;
 
@@ -7,17 +8,6 @@ use POSIX qw/pause/;
 use Carp;
 use Zeta::Run;
 use Data::Dump;
-
-# my $cmd = shift;
-#
-#  todo 
-#  zeta hello
-#  zeta generate lite_app  zixapp
-#  zeta generate app zixapp
-#  zeta generate makefile
-# 
-
-
 
 #
 #  debug测试 -- 环境变量ZETA_DEBUG
@@ -147,51 +137,6 @@ EOF
 }
 
 
+1;
 
 __END__
-################################################
-# ----------------------------------------------
-# 属性定义
-# ----------------------------------------------
-# [property]
-# apphome = /home/hary/workspace/zbp
-#
-# ----------------------------------------------
-# 核心配置
-# 1. context为主进程与子进程共享资源模块，
-#    do context.pl 必须返回一个href or aref 
-# 2. main为主控函数，do main.pl必须返回cref
-# ----------------------------------------------
-# [kernel]
-# apphome       -- 项目home ~/workspace/myprj
-# pidfile       -- ${apphome}/log/myprj.pid
-# mode          -- process_tree  前台模式
-#                  logger        后台模式
-#                  loggerd       后台模式+Loggerd子进程
-# logger_name   -- loggerd模式下Loggerd进程的名称
-# logurl        -- 主日志的日志路径
-# loglevel      -- 日志级别
-# chnl          -- 管道列表: chnl_a chnl_b
-# name          -- 主进程显示名称: Zprg
-# plugin        -- plugin.pl 
-# main          -- main.pl 
-# args          -- 
-#
-# ----------------------------------------------
-# 模块配置 
-#  1  code, exec只能配置一个
-#  2  do code.pl 必须返回一个cref 
-#  3  自身是个可执行模块  
-# ----------------------------------------------
-# [module]
-# reader    --  从哪里读
-# writer    --  往哪里写
-# mreader   --  multi reader
-# mwriter   --  multi writer
-# code      --  code.pl,
-# exec      --  exec.pl, 
-# para      --  参数[]
-# reap      --  回收
-# size      --  启动几个进程
-################################################
-

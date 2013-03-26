@@ -3,5 +3,5 @@
 rm -fr *.log;
 export APP_HOME=.
 export PERL5LIB=~/workspace/zeta/lib
-../../../bin/zeta -f zeta.conf
+../../bin/zeta -f zeta.conf
 
