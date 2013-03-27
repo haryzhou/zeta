@@ -39,7 +39,7 @@ sub spawn {
     confess "can not load module[$args->{module}] error[$@]" if $@;
 
     # 构造管理对象
-    my $admin = $args->{module}->new( $args->{para} ) or confess "can not new $args->{module} with " . Data::Dump->dump( $args->{para} );
+    my $admin = $args->{module}->new( @{$args->{para}} ) or confess "can not new $args->{module} with " . Data::Dump->dump( $args->{para} );
 
     # 创建poe
     POE::Session->create(
