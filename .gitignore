@@ -1,5 +1,6 @@
 *.log
 *.pid
+*.swp
 t/ext_work/work
 gen/*
 /blib

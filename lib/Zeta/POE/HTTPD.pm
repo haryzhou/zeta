@@ -109,7 +109,7 @@ sub spawn {
                 delete $_[HEAP]{server};
             },
 
-            # 
+            # 发送完毕
             on_flush => sub {
                 delete $_[HEAP]{client}{$_[ARG0]};
             }
