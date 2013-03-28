@@ -2,6 +2,7 @@
 *.pid
 *.swp
 t/ext_work/work
+/etc
 gen/*
 /blib
 /Makefile
