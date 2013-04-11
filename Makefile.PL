@@ -16,6 +16,10 @@ WriteMakefile(
         }
     },
 
+    PREREQ_PM => {
+        'Data::Dump'  => 1.21,
+    },
+
     EXE_FILES => [ 'bin/zeta', 'bin/zdq', ],
     test      => {
         TESTS => 't/*.t t/*/*.t',
