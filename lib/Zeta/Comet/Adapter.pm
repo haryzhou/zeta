@@ -136,7 +136,7 @@ sub on_adapter_data {
     # 收到后端业务处理模块返回的数据，反序列化
     my $tdata = $_[HEAP]{serializer}->deserialize( $_[ARG0] );
     unless ($tdata) {
-        $logger->error( "can not deserialize data:\n" . "[$_[ARG0]]" . "\n" ) if $logger->{loglevel} > $logger->INFO();
+        $logger->error( "can not deserialize data:\n" . "[$_[ARG0]]" . "\n" );
         return 1;
     }
     # $logger->debug("after deserialize:\n" .  Data::Dump->dump($tdata)) if $logger->loglevel > $logger->INFO;
@@ -211,7 +211,7 @@ sub on_session_join {
     my $logger = $_[HEAP]{logger};
     $logger->info("$iname line[$idx] join");
     $_[HEAP]{sessions}->{$iname}->[$idx] = $iname . "." . $idx;
-    $logger->info( "now sessions:\n" . Data::Dump->dump( $_[HEAP]{sessions} ) ) if $logger->{loglevel} > $logger->INFO();
+    $logger->info( "now sessions:\n" . Data::Dump->dump( $_[HEAP]{sessions} ) );
 
     # 客户子类化: 都有线路加入后如何处理, 默认_on_session_join不作任何处理
     unless ( $_[HEAP]{class}->_on_session_join( $_[HEAP], $_[KERNEL], $args ) ) {
@@ -236,7 +236,7 @@ sub on_session_leave {
     my $logger = $_[HEAP]{logger};
     $logger->info("$iname line[$idx] leave");
     $_[HEAP]{sessions}->{$iname}->[$idx] = undef;
-    $logger->debug( "sessions:\n" . Data::Dump->dump( $_[HEAP]{sessions} ) ) if $logger->{loglevel} > $logger->INFO();
+    $logger->debug( "sessions:\n" . Data::Dump->dump( $_[HEAP]{sessions} ) );
 
     # 客户子类化:
     unless ($_[HEAP]{class}->_on_session_leave( $_[HEAP], $_[KERNEL], $args )) {

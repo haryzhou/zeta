@@ -9,6 +9,13 @@ use POE::Wheel::ListenAccept;
 use POE::Filter::HTTPD;
 use POE::Wheel::ReadWrite;
 use JSON::XS;
+use constant {
+    DEBUG => $ENV{ZETA_POE_HTTPD_DEBUG} || 0,
+};
+
+BEGIN {
+    require Data::Dump if DEBUG;
+}
 
 #
 # (
@@ -74,7 +81,7 @@ sub spawn {
                 # 接收请求
                 eval {
                     my $req = decode_json($_[ARG0]->content());
-                    warn "recv request: \n" . Data::Dump->dump($req) if $ENV{MAIN_DEBUG};
+                    warn "recv request: \n" . Data::Dump->dump($req) if DEBUG;
     
                     # 处理请求
                     my $json = $admin->handle($req);
@@ -86,7 +93,7 @@ sub spawn {
                     $res->header( "Content-Type"   => "text/html;charset=utf-8" );
                     $res->header( "Cache-Control"  => "private" );
                     $res->content($content);
-                    warn "send response: \n" . Data::Dump->dump($res) if $ENV{MAIN_DEBUG};
+                    warn "send response: \n" . Data::Dump->dump($res) if DEBUG;
                     $_[HEAP]{client}{$_[ARG1]}->put($res);
                 };
                 if ($@) {

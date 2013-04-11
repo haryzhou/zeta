@@ -85,4 +85,6 @@ sub on_send {
     $_[KERNEL]->delay( 'on_send' => 2 );
 }
 
+__END__
+
 

@@ -123,137 +123,205 @@ sub spawn {
         }
     }
 
+    # 启动所有机构session
     for my $ins ( keys %{$ic} ) {
-
         my $icfg = delete $ic->{$ins};
         $icfg->{name} = $ins;
-
-        my $mode   = lc $icfg->{mode};
-        my $module = $icfg->{module};
-
-        ###################################
-        #  单工双链, 多对线路
-        ###################################
-        if ( $mode =~ /^si$/ ) {
-            my $idx = 0;
-            $logger->debug("beg create session[SI] for $ins.$idx");
-            for my $line ( @{ $icfg->{lines} } ) {
-                my $lscfg = {%$icfg};
-                delete $lscfg->{lines};
-
-                $lscfg->{idx}        = $idx;
-                $lscfg->{localaddr}  = $line->{localaddr};
-                $lscfg->{localport}  = $line->{localport};
-                $lscfg->{remoteaddr} = $line->{remoteaddr};
-                $lscfg->{remoteport} = $line->{remoteport};
-                $lscfg->{timeout}    = $line->{timeout} if $line->{timeout};
-                $lscfg->{interval}   = $line->{interval} if $line->{interval};
-
-                # 每条线路都用自己的日志
-                my $logname =
-                    $lscfg->{name} . "."
-                  . $lscfg->{idx} . "."
-                  . $lscfg->{remoteaddr} . "-"
-                  . $lscfg->{remoteport} . "."
-                  . "$mode.log";
-                my $newlog = $logger->clone($logname);
-
-                # 启动
-                my $ls = $module->spawn( $newlog, $lscfg );
-                $idx++;
-            }
+        if ( $icfg->{mode} =~ /^(si|da|dr|tc|ts)$/) {
+            &_spawn_common($icfg, $logger, $icfg->{mode});
         }
-        #################################################
-        # 双工被动        : dr
-        # 双工主动        : da
-        # tcp短连接客户端 : tc
-        # tcp短连接服务端 : ts
-        #################################################
-        elsif ( $mode =~ /^(dr|da|tc|ts)$/ ) {
-
-            my $idx = 0;
-            for my $line ( @{ $icfg->{lines} } ) {
-                my $lscfg = {%$icfg};
-                delete $lscfg->{lines};
-
-                $logger->debug("beg create session[$mode] for $ins.$idx");
-                my $addr_name;
-                my $port_name;
-                my $addr_value;
-                my $port_value;
-
-                #
-                # da tc 为客户端， 需要remote
-                #
-                if ( $mode =~ /^(da|tc)/ ) {
-                    $addr_name  = "remoteaddr";
-                    $port_name  = "remoteport";
-                    $addr_value = $line->{remoteaddr};
-                    $port_value = $line->{remoteport};
-                }
-
-                #
-                # dr ts 为服务端， 需要local
-                #
-                else {
-                    $addr_name  = "localaddr";
-                    $port_name  = "localport";
-                    $addr_value = $line->{localaddr};
-                    $port_value = $line->{localport};
-                }
-
-                $lscfg->{idx}        = $idx;
-                $lscfg->{$addr_name} = $addr_value;
-                $lscfg->{$port_name} = $port_value;
-                $lscfg->{timeout}    = $line->{timeout} if $line->{timeout};
-                $lscfg->{interval}   = $line->{interval} if $line->{interval};
-
-                # $logger->debug("lscfg:\n" . Data::Dump->dump($lscfg));
-
-                # 每条线路都用自己的日志
-                my $logname =
-                    $lscfg->{name} . "."
-                  . $lscfg->{idx} . "."
-                  . $lscfg->{$addr_name} . "-"
-                  . $lscfg->{$port_name} . "."
-                  . "$mode.log";
-                my $newlog = $logger->clone($logname);
-
-                # 启动线路session
-                $logger->debug(
-                    "spawn $module with:\n" . Data::Dump->dump($lscfg) );
-                my $ls = $module->spawn( $newlog, $lscfg );
-                $idx++;
-            }
-
-        }
-        #############################
-        # 定制化配置, 启动方式:
-        # {
-        #         mode      => 'xx',
-        #         module    => 'Zeta::Comet::XX',
-        # }
-        #############################
         else {
-
-            my $idx = 0;
-            for my $line ( @{ $icfg->{lines} } ) {
-
-                my $lscfg = {%$icfg};
-                delete $lscfg->{lines};
-                $lscfg->{line} = $line;
-                $lscfg->{line}->{idx} = $idx;
-
-                $logger->debug("begin spawn new session for $lscfg->{name}");
-                my $logname = $lscfg->{name} . "." . $lscfg->{idx} . "." . "cust.log";
-                my $newlog = $logger->clone( $lscfg->{name} . "." . $lscfg->{idx} . "cust.log" );
-
-                # 准备日志启动
-                my $ls = $module->spawn( $newlog, $icfg );
-                $idx++;
-            }
+            &_spawn_ext($icfg, $logger);
         }
     }
+
+    # 启动适配器
+    &_spawn_ad($args, $logger);
+
+    return 1;
+}
+
+#
+# 常见通讯方式
+#
+sub _spawn_common {
+    my ($icfg, $logger, $mode) = @_;
+    my $func = \&{'_spawn_' . $mode};
+    return $func->($icfg, $logger);
+}
+
+#
+# 启动单工双链
+#
+sub _spawn_si {
+
+    my ($icfg, $logger)  = @_;
+    my $mode = $icfg->{mode};
+
+    my $idx = 0;
+    $logger->debug("beg create session[SI] for $icfg->{name}.$idx");
+    for my $line ( @{ $icfg->{lines} } ) {
+        my $lscfg = {%$icfg};
+        delete $lscfg->{lines};
+
+        $lscfg->{idx}        = $idx;
+        $lscfg->{localaddr}  = $line->{localaddr};
+        $lscfg->{localport}  = $line->{localport};
+        $lscfg->{remoteaddr} = $line->{remoteaddr};
+        $lscfg->{remoteport} = $line->{remoteport};
+        $lscfg->{timeout}    = $line->{timeout} if $line->{timeout};
+        $lscfg->{interval}   = $line->{interval} if $line->{interval};
+
+        # 每条线路都用自己的日志
+        my $logname =
+            $lscfg->{name} . "."
+          . $lscfg->{idx} . "."
+          . $lscfg->{remoteaddr} . "-"
+          . $lscfg->{remoteport} . "."
+          . "$mode.log";
+        my $newlog = $logger->clone($logname);
+
+        # 启动
+        my $ls = $icfg->{module}->spawn( $newlog, $lscfg );
+        $idx++;
+    }
+}
+
+#
+# 启动双工主动
+#
+sub _spawn_da {
+
+    my ($icfg, $logger)  = @_;
+    my $mode = $icfg->{mode};
+
+    my $idx = 0;
+    for my $line ( @{ $icfg->{lines} } ) {
+        my $lscfg = {%$icfg};
+        delete $lscfg->{lines};
+
+        $logger->debug("beg create session[$mode] for $icfg->{name}.$idx");
+
+        $lscfg->{idx}        = $idx;
+        $lscfg->{remoteaddr} = $line->{remoteaddr};
+        $lscfg->{remoteport} = $line->{remoteport};
+        $lscfg->{timeout}    = $line->{timeout} if $line->{timeout};
+        $lscfg->{interval}   = $line->{interval} if $line->{interval};
+
+        # $logger->debug("lscfg:\n" . Data::Dump->dump($lscfg));
+
+        # 每条线路都用自己的日志
+        my $logname =
+            $lscfg->{name} . "."
+          . $lscfg->{idx} . "."
+          . $lscfg->{remoteaddr} . "-"
+          . $lscfg->{remoteport} . "."
+          . "$mode.log";
+        my $newlog = $logger->clone($logname);
+
+        # 启动线路session
+        $logger->debug(
+            "spawn $icfg->{module} with:\n" . Data::Dump->dump($lscfg) );
+        my $ls = $icfg->{module}->spawn( $newlog, $lscfg );
+        $idx++;
+    }
+}
+
+#
+# 启动双工被动
+#
+sub _spawn_dr {
+
+    my ($icfg, $logger)  = @_;
+    my $mode = $icfg->{mode};
+
+    my $idx = 0;
+    for my $line ( @{ $icfg->{lines} } ) {
+        my $lscfg = {%$icfg};
+        delete $lscfg->{lines};
+
+        $logger->debug("beg create session[$mode] for $icfg->{name}.$idx");
+
+        $lscfg->{idx}       = $idx;
+        $lscfg->{localaddr} = $line->{localaddr};
+        $lscfg->{localport} = $line->{localport};
+        $lscfg->{timeout}   = $line->{timeout}  if $line->{timeout};
+        $lscfg->{interval}  = $line->{interval} if $line->{interval};
+
+        # $logger->debug("lscfg:\n" . Data::Dump->dump($lscfg));
+
+        # 每条线路都用自己的日志
+        my $logname =
+            $lscfg->{name} . "."
+          . $lscfg->{idx} . "."
+          . $lscfg->{localaddr} . "-"
+          . $lscfg->{localport} . "."
+          . "$mode.log";
+        my $newlog = $logger->clone($logname);
+
+        # 启动线路session
+        $logger->debug( "spawn $icfg->{module} with:\n" . Data::Dump->dump($lscfg) );
+        my $ls = $icfg->{module}->spawn( $newlog, $lscfg );
+        $idx++;
+    }
+    return 1;
+}
+
+#
+# 启动TCP client
+#
+sub _spawn_tc {
+    return &_spawn_da(@_);
+}
+
+#
+# 启动TCP server
+#
+sub _spawn_ts {
+    return &_spawn_dr(@_);
+}
+
+#
+# 启动特别服务
+#
+sub _spawn_ext {
+
+    my ($icfg, $logger) = @_;
+    my $mode = $icfg->{mode};
+
+    #############################
+    # 定制化配置, 启动方式:
+    # {
+    #     mode   => 'xx',
+    #     module => 'Zeta::Comet::XX',
+    # }
+    #############################
+    my $idx = 0;
+    for my $line ( @{ $icfg->{lines} } ) {
+
+        my $lscfg = {%$icfg};
+        delete $lscfg->{lines};
+        $lscfg->{line} = $line;
+        $lscfg->{line}->{idx} = $idx;
+
+        $logger->debug("begin spawn new session for $lscfg->{name}");
+        my $logname = $lscfg->{name} . "." . $lscfg->{idx} . "." . "cust.log";
+        my $newlog = $logger->clone( $lscfg->{name} . "." . $lscfg->{idx} . "cust.log" );
+
+        # 准备日志启动
+        my $ls = $icfg->{module}->spawn( $newlog, $icfg );
+        $idx++;
+    }
+
+    return 1;
+}
+
+#
+# 启动adapter
+#
+sub _spawn_ad {
+
+    my ($args, $logger) = @_;
 
     #################################
     # adapter配置参数经检查
@@ -276,8 +344,8 @@ sub spawn {
         return undef;
     }
 
-    return 1;
 }
+
 
 #
 # 机构配置检查
@@ -387,37 +455,6 @@ sub spawn_line {
 
     $old_log->debug( "begin spawn line:\n" . Data::Dump->dump($line) );
     $icfg->{module}->spawn($line);
-}
-
-#
-# 启动adapter
-#
-#  adapter  =>  'Zeta::Comet::Adapter::Queue'
-#  ad_args  => {
-#      serializer => $ser,
-#      reader     => $reader,
-#      writer     => $writer,
-#      logger     => $logger,
-#  }
-#
-sub spawn_adapter {
-    my $class = shift;
-    my $args  = {@_};
-
-    # 加载Adapter模块...
-    eval "use $args->{adapter};";
-    if ($@) {
-        $args->{ad_args}->{logger}->error("can not load $args->{adapter}\[$@]");
-        return;
-    }
-
-    # 启动adapter
-    my $ad = $args->{ad_name}->spawn( @{ $args->{ad_args} }, );
-    unless ($ad) {
-        $args->{ad_args}->{logger}->error("can not create Adapter::Pipe");
-        return;
-    }
-    return 1;
 }
 
 1;
