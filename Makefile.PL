@@ -5,6 +5,7 @@ WriteMakefile(
     AUTHOR    => 'haryzhou <zcman2005@gmail.com>',
     ABSTRACT  => 'Account system generator',
     LICENSE   => 'artistic_2',
+    VERSION_FROM => 'lib/Zeta/Run.pm',
     META_MERGE => {
         requires => { perl => '5.10' },
         resources => {
@@ -17,7 +18,9 @@ WriteMakefile(
     },
 
     PREREQ_PM => {
-        'Data::Dump'  => 1.21,
+        'Data::Dump'        => 1.21,
+        'POE'               => 1.354,
+        'POE::Filter::JSON' => 0.04,
     },
 
     EXE_FILES => [ 'bin/zeta', 'bin/zdq', ],

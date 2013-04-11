@@ -4,6 +4,8 @@ use warnings;
 use Carp;
 use File::Basename;
 
+our $VERSION = '0.04';
+
 #
 # 插件
 my %plugin;

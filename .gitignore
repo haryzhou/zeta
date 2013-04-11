@@ -1,6 +1,9 @@
 *.log
 *.pid
 *.swp
+*.tar
+*.gz
+*.old
 t/ext_work/work
 /etc
 gen/*
