@@ -1,6 +1,7 @@
 package Zeta::IPC::SHM;
 use strict;
 use warnings;
+use Errno;
 use IPC::SysV qw(S_IRUSR S_IWUSR IPC_CREAT IPC_EXCL);
 use Carp qw/confess/;
 use Data::Dump;
@@ -18,7 +19,7 @@ sub new {
 
     my $id = shmget( $key, $size, S_IRUSR | S_IWUSR | IPC_CREAT | IPC_EXCL );
     unless ( defined $id ) {
-        if ( $! =~ /File exists/ ) {
+        if ( $!{EEXIST} ) {
             $id = shmget( $key, 0, S_IRUSR | S_IWUSR );
             unless ( defined $id ) {
                 confess "shmget error: [$!]";

@@ -2,6 +2,7 @@ package Zeta::IPC::SEM;
 
 use strict;
 use warnings;
+use Errno;
 use Carp qw/confess/;
 use IPC::SysV
   qw(IPC_NOWAIT MSG_NOERROR S_IRUSR S_IWUSR IPC_CREAT IPC_EXCL SEM_UNDO SETVAL);
@@ -41,7 +42,7 @@ sub new {
     # 试图创建...
     my $id = semget( $key, 1, S_IRUSR | S_IWUSR | IPC_CREAT | IPC_EXCL );
     unless ( defined $id ) {
-        if ( $! =~ /File exists/ ) {
+        if ( $!{EEXIST} ) {
             $id = semget( $key, 0, S_IRUSR | S_IWUSR );
             unless ( defined $id ) {
                 confess "semget error: [$!]";
@@ -68,7 +69,7 @@ sub lock {
 
   RETRY:
     unless ( semop( $self->{id}, $self->{lock} ) ) {
-        if ( $! =~ /Interrupted system call/ ) {
+        if ( $!{EINTR} ) {
             goto RETRY;
         }
         confess("semop error: [$!]");
