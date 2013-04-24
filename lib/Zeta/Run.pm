@@ -6,6 +6,10 @@ use File::Basename;
 
 our $VERSION = '0.04';
 
+use constant {
+    DEBUG => $ENV{ZETA_RUN_DEBUG} || 0,
+};
+
 #
 # 插件
 my %plugin;
@@ -99,6 +103,8 @@ sub launch {
 sub run {
     my ($self, $args) = @_;
 
+    warn "[$0]" if DEBUG;
+
     # 模块检查
     $self->check_mlist($args->{module});
 
@@ -140,7 +146,7 @@ sub load_plugin {
     my ($self, $name) = @_;
 
     # 先从PLUGIN_PATH环境变量找插件
-    my @plugin_path   =  split ':', $ENV{PLUGIN_PATH} if $ENV{PLUGIN_PATH} and -d $ENV{PLUGIN_PATH};
+    my @plugin_path  = split ':', $ENV{PLUGIN_PATH} if $ENV{PLUGIN_PATH} && -d $ENV{PLUGIN_PATH};
     my $pfile;
     for (@plugin_path) {
         next unless -f "$_/$name.plugin";

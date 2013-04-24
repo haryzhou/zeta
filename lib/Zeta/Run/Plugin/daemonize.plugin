@@ -17,6 +17,7 @@ use IO::File;
 my $mode;    # 运行模式
 my $name;    # 进程组名称
 my $pidfile; # pid文件
+my $cmdline;
 
 #
 # pid文件
@@ -24,6 +25,13 @@ my $pidfile; # pid文件
 #
 helper daemonize_pidfile => sub { $pidfile };
 helper daemonize_name    => sub { $name    };
+helper daemonize_restart => sub {
+    zlogger->info("靠[$cmdline]...");
+    local $SIG{TERM} = 'IGNORE';
+    kill 15, -$$;
+    unlink $pidfile;    
+    exec $cmdline;
+};
 
 warn "-------------------------\n"  and
 warn "daemonize.plugin loaded:\n"  and
@@ -43,6 +51,8 @@ EOF
 #
 sub {
     ($name, $pidfile) = @_;
+
+    $cmdline = "$0 @ARGV";
     
     my $run = 0;
     my $pid = 0;
