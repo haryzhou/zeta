@@ -26,7 +26,7 @@ my $cmdline;
 helper daemonize_pidfile => sub { $pidfile };
 helper daemonize_name    => sub { $name    };
 helper daemonize_restart => sub {
-    zlogger->info("¿¿[$cmdline]...");
+    zlogger->info("restart[$0] with[$cmdline]...");
     local $SIG{TERM} = 'IGNORE';
     kill 15, -$$;
     unlink $pidfile;    
