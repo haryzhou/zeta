@@ -246,14 +246,14 @@ helper process_run => sub {
 
         # child-process plugin load
         my $plugin = $args->{'plugin'};
-        Data::Dump->dump($plugin);
+        warn "begin init child plugin: \n" . Data::Dump->dump($plugin);
         for ( keys %$plugin) {
             $self->load_plugin($_);
             $self->init_plugin($_, $plugin->{$_});
         } 
 
         # Ö´ÐÐ
-        $code->($para);
+        $code->(@$para);
         exit 0;
 
     }
@@ -475,10 +475,10 @@ helper process_submit => sub {
     my $logger = $self->logger;
 
     # check module name
-    if (   exists $self->{running}->{$mname}
-        || exists $self->{running}->{"$mname.0"}
-        || exists $self->{stopped}->{"$mname"}
-        || exists $self->{stopped}->{"$mname.0"} )
+    if (   exists $running{$mname}
+        || exists $running{"$mname.0"}
+        || exists $stopped{"$mname"}
+        || exists $stopped{"$mname.0"} )
     {
         $logger->error("module $mname already exists, reassign a module name");
         return;
