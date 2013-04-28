@@ -52,7 +52,7 @@ unless($args) {
     $args = [];
 }
 unless( 'ARRAY' eq ref $args) {
-    die "invalid kernel->args";
+    confess "invalid kernel->args";
 }
 
 # main处理
@@ -65,15 +65,18 @@ unless(defined $main_file) {
 }
 else {
     unless( -f $main_file ) {
-        die "file[$main_file] invalid"; 
+        confess "file[$main_file] invalid"; 
     }
-    $main = do $main_file or confess "can not do file[$main_file] error[$@]";
+    $main = do $main_file;
+    if ($@) { 
+        confess "can not do file[$main_file] error[$@]";
+    }
 }
 
 # 检查channel
 $kcfg->{channel} ||= [];
 unless( 'ARRAY' eq ref $kcfg->{channel}) {
-    die "invalid kernel->channel";
+    confess "invalid kernel->channel";
 }
 
 #
@@ -91,6 +94,10 @@ unless( 'ARRAY' eq ref $kcfg->{channel}) {
 my $mcfg = delete $zcfg->{module};
 for my $mname (keys %$mcfg) {
     my $m = $mcfg->{$mname};
+
+    my $enable = delete $m->{enable};
+    delete $mcfg->{$mname} and next unless $enable;
+
     $m->{para}    ||= [];
     $m->{mwriter} ||= [];
     $m->{mreader} ||= [];
@@ -101,7 +108,10 @@ for my $mname (keys %$mcfg) {
     }
 
     if ($m->{code})  {
-        my $cref = do $m->{code} or  croak "can not do file[$m->{code}] error[$@]";
+        my $cref = do $m->{code};
+        if ($@) {
+            confess "can not do file[$m->{code}] error[$@]";
+        }
         confess "[$mname] code for $mname is not cref" unless 'CODE' eq ref $cref;
         $m->{code} = $cref;
     }
@@ -124,21 +134,19 @@ zkernel->launch($kcfg);
 # 加载插件
 if ( $pcfg ) {
     if ( -f $pcfg) {
-       do $pcfg or die "can not do file[$pcfg] error[$@]";
+       do $pcfg or confess "can not do file[$pcfg] error[$@]";
     }
     else {
-       die "plugin file[$pcfg] does not exists";
+       confess "plugin file[$pcfg] does not exists";
     }
 }
 
 # 运行
-zkernel->run(
-    {
-        main   => $main,
-        args   => $args,
-        module => $mcfg
-    }
-);
+zkernel->run({
+    main   => $main,
+    args   => $args,
+    module => $mcfg
+});
 
 
 sub usage {

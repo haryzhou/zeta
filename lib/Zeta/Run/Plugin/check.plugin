@@ -175,7 +175,7 @@ helper check_module => sub {
     if ($m->{code}) {
         my $mcref = ref $m->{code};
         unless($mcref =~ /CODE/) {
-            confess "code must be code ref";
+            confess "code must be code ref[$mcref]";
         } 
     }
     # 可执行文件 
