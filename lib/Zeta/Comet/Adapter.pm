@@ -95,7 +95,7 @@ sub on_start {
 sub on_remote_data {
 
     my $logger = $_[HEAP]{logger};
-    # $logger->info("on_remote_data got:\n" . Data::Dump->dump($_[ARG0])) if $logger->loglevel > $logger->INFO;
+    # $logger->info("on_remote_data got:\n" . Data::Dump->dump($_[ARG0])) ;
 
     # 子类处理: 收到远端数据后, _remote_filter默认不作任何处理
     my $data = $_[HEAP]{class}->_remote_filter( $_[HEAP], $_[ARG0] );
@@ -131,7 +131,7 @@ sub on_remote_data {
 sub on_adapter_data {
 
     my $logger = $_[HEAP]{logger};
-    # $logger->info("on_adapter_data got:\n" .  Data::Dump->dump($_[ARG0])) if $logger->loglevel > $logger->INFO;
+    # $logger->info("on_adapter_data got:\n" .  Data::Dump->dump($_[ARG0])) ;
 
     # 收到后端业务处理模块返回的数据，反序列化
     my $tdata = $_[HEAP]{serializer}->deserialize( $_[ARG0] );
@@ -139,7 +139,7 @@ sub on_adapter_data {
         $logger->error( "can not deserialize data:\n" . "[$_[ARG0]]" . "\n" );
         return 1;
     }
-    # $logger->debug("after deserialize:\n" .  Data::Dump->dump($tdata)) if $logger->loglevel > $logger->INFO;
+    # $logger->debug("after deserialize:\n" .  Data::Dump->dump($tdata)) ;
 
     # 子模块过滤过滤处理，_adapter_filter默认不作任何处理
     my $data = $_[HEAP]{class}->_adapter_filter( $_[HEAP], $tdata );

@@ -27,18 +27,29 @@ sub _on_start {
 }
 
 #
-# ´Óremote data È¡³öÒµÎñ±¨ÎÄ
+# 接收到服务器应答
 #
 sub _packet {
 
     my $class = shift;
     my $heap  = shift;
-    my $rdata = shift;
-    $rdata->content(),    # attention
+    my $res   = shift;
+
+    my $data =  $res->content();
+    my $len = length $data;
+    if ($len > 0) {
+        $heap->{logger}->debug("recv data\n  length : [$len]");
+        $heap->{logger}->debug_hex($data);
+    }
+    else {
+        $heap->{logger}->debug("recv data\n  length : [0]");
+    }
+    return $data;
+
 }
 
 #
-# ´Óadapter data ¹¹Ôìrequest
+# 发送请求
 #
 sub _request {
 
@@ -46,9 +57,17 @@ sub _request {
     my $heap  = shift;
     my $data  = shift;
 
+    my $len = length $data;
+    if ($len > 0) {
+        $heap->{logger}->debug("send data\n  length : [$len]");
+        $heap->{logger}->debug_hex($data);
+    }
+    else {
+        $heap->{logger}->debug("send data\n  length : [0]");
+    }
+
     my $config = $heap->{config};
-    my $url =
-      "http://$config->{remoteaddr}:$config->{remoteport}" . $data->{path};
+    my $url = "http://$config->{remoteaddr}:$config->{remoteport}" . $data->{path};
     my $request = POST $url, Content => $data->{packet};
     $heap->{logger}->debug( "send request:\n" . Data::Dump->dump($request) );
     return $request;

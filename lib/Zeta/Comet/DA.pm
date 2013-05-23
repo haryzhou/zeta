@@ -283,7 +283,7 @@ sub on_remote_data {
 sub on_adapter_data {
 
     my $logger = $_[HEAP]{logger};
-    $logger->debug( "got adapter data:\n" . Data::Dump->dump( $_[ARG0] ) ) if $logger->loglevel > $logger->INFO;
+    $logger->debug( "got adapter data:\n" . Data::Dump->dump( $_[ARG0] ) );
 
     #
     # 重置check

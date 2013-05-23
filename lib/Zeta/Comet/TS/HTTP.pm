@@ -28,7 +28,18 @@ sub _packet {
     my $class = shift;
     my $heap  = shift;
     my $req   = shift;
-    return $req->content();
+
+    warn "_packet is called with:\n" . Data::Dump->dump($req);
+    my $data =  $req->content();
+    my $len = length $data;
+    if ($len > 0) {
+        $heap->{logger}->debug("recv data\n  length : [$len]");
+        $heap->{logger}->debug_hex($data);
+    }   
+    else {
+        $heap->{logger}->debug("recv data\n  length : [0]");
+    }
+    return $data;
 }
 
 #
@@ -39,7 +50,16 @@ sub _response {
     my $heap  = shift;
     my $data  = shift;
 
-    $heap->{logger}->debug( "_response got data:\n" . Data::Dump->dump($data) );
+    my $len = length $data->{packet};
+    if ($len > 0) {
+        $heap->{logger}->debug("send data\n  length : [$len]");
+        $heap->{logger}->debug_hex($data->{packet});
+    }
+    else {
+        $heap->{logger}->debug("send data\n  length : [0]");
+    }
+
+    # $heap->{logger}->debug( "_response got data:\n" . Data::Dump->dump($data) );
     my $response = HTTP::Response->new( 200, "OK" );
     $response->header( "Content-Length" => length $data->{packet} );
     $response->header( "Content-Type"   => "text/html;charset=utf-8" );

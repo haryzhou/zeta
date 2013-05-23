@@ -22,6 +22,10 @@ use POE::Filter::Block;
 use POE::Filter::Stream;
 use Zeta::Codec::Frame;
 
+use constant {
+    DEBUG => $ENV{COMET_DEBUG} || 0,
+};
+
 ############################################
 # args:
 #   logger
@@ -32,6 +36,11 @@ use Zeta::Codec::Frame;
 #     codec       => ins  4 | nac 2
 #     timeout     => 超时时间
 #   }
+#
+#   localaddr|
+#       +    |---->  lfd
+#   localport|
+#
 ############################################
 sub spawn {
 
@@ -124,19 +133,25 @@ sub on_setup {
         $_[KERNEL]->post( 'adapter', 'on_session_leave',[ $config->{name}, $config->{idx} ] );
     }
 
-    ####################
-    # listen accept
-    ####################
-    my $la_socket = IO::Socket::INET->new(
-        LocalAddr => $config->{localaddr},
-        LocalPort => $config->{localport},
-        Listen    => 5,
-        ReuseAddr => 1,
-    );
-    unless ($la_socket) {
-        $logger->warn( "can not create LA socket[$config->{localaddr}:$config->{localport}]");
-        $_[KERNEL]->delay( 'on_setup' => 2 );
-        return;
+    ###########################################################
+    # listen accept:  要么直接是lfd, 要么是localaddr:localport
+    ###########################################################
+    my $la_socket;
+    if ( $config->{lfd} ) {
+        $la_socket = $config->{lfd};
+    }
+    else {
+        $la_socket = IO::Socket::INET->new(
+            LocalAddr => $config->{localaddr},
+            LocalPort => $config->{localport},
+            Listen    => 5,
+            ReuseAddr => 1,
+        );
+        unless ($la_socket) {
+            $logger->warn( "can not create LA socket[$config->{localaddr}:$config->{localport}]");
+            $_[KERNEL]->delay( 'on_setup' => 2 );
+            return;
+        }
     }
     my $la = POE::Wheel::ListenAccept->new(
         Handle      => $la_socket,
@@ -223,13 +238,6 @@ sub on_remote_data {
         $_[HEAP]{logger}->debug("recv invalid data");
         return 1;
     } 
-    {
-        my $len = length $req;
-        if ($len > 0) {
-            $_[HEAP]{logger}->debug("recv data\n  length : [$len]");
-            $_[HEAP]{logger}->debug_hex($req);
-        }
-    }
 
     # 收到数据开始， 重新设置超时回调
     $_[KERNEL]->alarm_remove($_[HEAP]{ts}{$id}->{to});
@@ -264,7 +272,7 @@ sub on_adapter_data {
 
     my $logger= $_[HEAP]{logger};
 
-    $logger->debug( "got adapter data:\n" . Data::Dump->dump($data) ) if $logger->loglevel > $logger->INFO;
+    $logger->debug( "got adapter data:\n" . Data::Dump->dump($data) ) if DEBUG;
 
     my $sid = $data->{sid};
     unless ($sid) {
@@ -283,14 +291,8 @@ sub on_adapter_data {
     # 子类处理
     my $res = $_[HEAP]{class}->_response( $_[HEAP], $data );
 
-    # log
-    my $len = length $res;
-    $logger->debug("send data\n  length : [$len]");
-    $logger->debug_hex($res);
-
     # 发送数据到机构
     $_[HEAP]{ts}{$sid}->{ts}->put($res) if $res;
-
 
 }
 
@@ -347,6 +349,15 @@ sub _response {
     my $class = shift;
     my $heap  = shift;
     my $data  = shift;
+
+    my $len = length $data->{packet};
+    if ($len > 0) {
+        $heap->{logger}->debug("send data\n  length : [$len]");
+        $heap->{logger}->debug_hex($data->{packet});
+    }
+    else {
+        $heap->{logger}->debug("send data\n  length : [0]");
+    }
     return $data->{packet};
 }
 
@@ -357,6 +368,15 @@ sub _packet {
     my $class = shift;
     my $heap  = shift;
     my $data  = shift;
+
+    my $len = length $data;
+    if ($len > 0) {
+        $heap->{logger}->debug("recv data\n  length : [$len]");
+        $heap->{logger}->debug_hex($data);
+    }
+    else {
+        $heap->{logger}->debug("recv data\n  length : [0]");
+    }
     return $data;
 }
 
