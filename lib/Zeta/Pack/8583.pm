@@ -27,6 +27,7 @@ sub new {
 
 #
 #  conf  => /path/of/config/file
+#  conf  => \*DATA
 #
 sub _init {
 
@@ -35,7 +36,13 @@ sub _init {
     
     # load the config file
     my $conf_data = [];
-    my $fh = IO::File->new("< $args->{conf}");
+    my $fh;
+    if ('IO' eq ref $args->{conf}) {
+        $fh = $args->{conf};
+    }
+    else {
+        $fh = IO::File->new("< $args->{conf}");
+    }
     unless($fh) {
         die "config file : $args->{conf} not exist";
         exit;
