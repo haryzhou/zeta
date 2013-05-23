@@ -36,7 +36,7 @@ sub spawn {
                 on_setup        => 'on_setup',
                 on_destroy      => 'on_destroy',
                 on_negotiation  => 'on_negotiation',
-                on_remote_data  => 'on_remote_data',    # 收到客户端数据
+                on_remote_data  => 'on_remote_data',     # 收到客户端数据
                 on_adapter_data => 'on_adapter_data',    # switch中心post数据到机构
                 on_fh_error     => 'on_fh_error',
                 on_check        => 'on_check',

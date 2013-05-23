@@ -90,3 +90,5 @@ $poe_kernel->run();
 
 __END__
 
+echo '{"a":"b"}' | POST 'http://localhost:7771'
+
