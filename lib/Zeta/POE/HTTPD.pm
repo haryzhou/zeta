@@ -1,7 +1,7 @@
 package Zeta::POE::HTTPD;
 use strict;
 use warnings;
-use base qw/Zeta::POE::TCP/;
+use base qw/Zeta::POE::TCPD/;
 use constant {
     DEBUG => $ENV{ZETA_POE_HTTPD_DEBUG} || 0,
 };
