@@ -26,11 +26,17 @@ BEGIN {
 #    para    => 'xxx.cfg',
 # )
 # -----------------------------------
-# 参数方式1:
+# 参数方式2:
 # (
 #    lfd     => $lfd,
 #    module  => 'XXX::Admin',
 #    para    => 'xxx.cfg',
+# )
+# -----------------------------------
+# 参数方式3:
+# (
+#    lfd => $lfd,
+#    callback => \&func,
 # )
 #
 sub spawn {
@@ -38,17 +44,30 @@ sub spawn {
     my $class = shift;
     my $args  = {@_};
 
+    # 直接提供了lfd
     unless($args->{lfd}) {
         confess "port needed" unless $args->{port};
-        confess "module needed" unless $args->{module};
     }
 
-    # 加载管理模块
-    eval "use $args->{module};";
-    confess "can not load module[$args->{module}] error[$@]" if $@;
+    my $callback;
+    if ($args->{callback}) {
+        $callback = $args->{callback};
+    }
+    else {
+        confess "module needed" unless $args->{module};
 
-    # 构造管理对象
-    my $admin = $args->{module}->new( @{$args->{para}} ) or confess "can not new $args->{module} with " . Data::Dump->dump( $args->{para} );
+        # 加载管理模块
+        eval "use $args->{module};";
+        confess "can not load module[$args->{module}] error[$@]" if $@;
+
+        # 构造管理对象
+        my $admin = $args->{module}->new( @{$args->{para}} ) 
+          or confess "can not new $args->{module} with " . Data::Dump->dump( $args->{para} );
+
+        $callback = sub {
+            $admin->handle(+shift);
+        };
+    }
 
     # 创建poe
     POE::Session->create(
@@ -58,6 +77,8 @@ sub spawn {
                     Handle => $args->{lfd} || IO::Socket::INET->new(
                         LocalPort => $args->{port},
                         Listen    => 5,
+                        Proto     => 'tcp',
+                        ReuseAddr => 1,
                     ),
                     AcceptEvent => "on_client_accept",
                     ErrorEvent  => "on_server_error",
@@ -86,7 +107,7 @@ sub spawn {
                     warn "recv request: \n" . Data::Dump->dump($req) if DEBUG;
     
                     # 处理请求
-                    my $json = $admin->handle($req);
+                    my $json = $callback->($req);
     
                     # 响应请求
                     my $res     = HTTP::Response->new(200, 'OK');
@@ -99,7 +120,7 @@ sub spawn {
                     $_[HEAP]{client}{$_[ARG1]}->put($res);
                 };
                 if ($@) {
-                   zlogger->error("can not process request, error[$@]");
+                   warn "can not process request, error[$@]";
                    delete $_[HEAP]{client}{$_[ARG1]};
                 };
 
@@ -114,7 +135,7 @@ sub spawn {
             # 服务端错误
             on_server_error => sub {
                 my ( $op, $errno, $errstr ) = @_[ ARG0, ARG1, ARG2 ];
-                zlogger->warn("Server $op error $errno: $errstr");
+                warn "Server $op error $errno: $errstr";
                 delete $_[HEAP]{server};
             },
 
