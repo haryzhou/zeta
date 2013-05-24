@@ -20,6 +20,9 @@ use POE::Wheel::ReadWrite;
 use POE::Filter::Block;
 use POE::Filter::Stream;
 use Zeta::Codec::Frame;
+use constant {
+    DEBUG => $ENV{COMET_DEBUG} || 0,
+};
 
 ############################################
 # args:
@@ -151,11 +154,6 @@ sub on_socket_error {
 sub on_remote_data {
 
     my ( $res, $id ) = @_[ ARG0, ARG1 ];
-    
-   
-    my $len = length $res;
-    $_[HEAP]{logger}->debug("recv data\n  length : [$len]");
-    $_[HEAP]{logger}->debug_hex($res);
 
     if ( exists $_[HEAP]{tc}{$id} ) {
         $_[KERNEL]->post(
@@ -192,7 +190,7 @@ sub on_adapter_data {
     my $config = $_[HEAP]{config};
     my $logger = $_[HEAP]{logger};
 
-    # $logger->debug( "got adapter data:\n" . Data::Dump->dump( $_[ARG0] ) ) if $logger->loglevel > $logger->INFO;
+    # $logger->debug( "got adapter data:\n" . Data::Dump->dump( $_[ARG0] ) ) ;
 
     ######################
     # 连接客户端
@@ -237,10 +235,6 @@ sub on_adapter_data {
     # 子类化处理
     my $req = $_[HEAP]{class}->_request( $_[HEAP], $_[ARG0] );
 
-    my $len = length $req;
-    $logger->debug("send data\n  length : [$len]");
-    $logger->debug_hex($req);
-
     # 发送请求到机构
     $tc->put($req) if $req;
      
@@ -276,6 +270,16 @@ sub _request {
     my $class = shift;
     my $heap  = shift;
     my $data  = shift;
+
+    my $len = length $data->{packet};
+    if ($len > 0) {
+        $heap->{logger}->debug("send data\n  length : [$len]");
+        $heap->{logger}->debug_hex($data->{packet});
+    }
+    else {
+        $heap->{logger}->debug("send data\n  length : [0]");
+    }
+
     return $data->{packet};
 }
 
@@ -286,6 +290,15 @@ sub _packet {
     my $class = shift;
     my $heap  = shift;
     my $data  = shift;
+
+    my $len = length $data;
+    if ($len > 0) {
+        $heap->{logger}->debug("recv data\n  length : [$len]");
+        $heap->{logger}->debug_hex($data);
+    }
+    else {
+        $heap->{logger}->debug("recv data\n  length : [0]");
+    }
     return $data;
 }
 

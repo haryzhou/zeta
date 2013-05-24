@@ -36,7 +36,7 @@ sub spawn {
                 on_setup        => 'on_setup',
                 on_destroy      => 'on_destroy',
                 on_negotiation  => 'on_negotiation',
-                on_remote_data  => 'on_remote_data',    # 收到客户端数据
+                on_remote_data  => 'on_remote_data',     # 收到客户端数据
                 on_adapter_data => 'on_adapter_data',    # switch中心post数据到机构
                 on_fh_error     => 'on_fh_error',
                 on_check        => 'on_check',
@@ -245,7 +245,7 @@ sub on_remote_data {
 sub on_adapter_data {
 
     my $logger = $_[HEAP]{logger};
-    $logger->debug( "got adapter data:\n" . Data::Dump->dump( $_[ARG0] ) ) if $logger->loglevel > $logger->INFO;
+    $logger->debug( "got adapter data:\n" . Data::Dump->dump( $_[ARG0] ) );
 
     #
     # 重置check

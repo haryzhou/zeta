@@ -1,10 +1,7 @@
 package Zeta::Comet;
-
 use strict;
 use warnings;
-
 use Carp qw/cluck croak/;
-
 use POE::Session;
 use Zeta::IniParse qw/ini_parse/;
 
@@ -74,7 +71,7 @@ use Zeta::IniParse qw/ini_parse/;
 ###############################################################
 # {
 #     icbc => {
-#         codec     => 'nac 2',
+#         codec     => 'nac 2|ins 4|http',
 #         mode      => 'tc',
 #         module    => 'Zeta::Comet::TC',
 #         lines     => [
@@ -247,6 +244,7 @@ sub _spawn_dr {
         $lscfg->{localport} = $line->{localport};
         $lscfg->{timeout}   = $line->{timeout}  if $line->{timeout};
         $lscfg->{interval}  = $line->{interval} if $line->{interval};
+        $lscfg->{lfd}       = $line->{lfd} if $line->{lfd} and $mode =~ /ts/;
 
         # $logger->debug("lscfg:\n" . Data::Dump->dump($lscfg));
 
