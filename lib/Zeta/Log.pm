@@ -449,12 +449,24 @@ sub logfh {
 
 #
 # debug hex log
+# $self->debug_hex($prompt, $data);
 #
 sub debug_hex {
-    my $self = shift;
+    my $self = shift; 
+    unless(@_ == 2) {
+        warn "debug_hex参数必须是三个";
+        return $self;
+    }
+
+    my ($prompt, $data) = @_;
+    $self->debug($prompt);
+
+    my $len = length $data;
+    return $self unless $len;
+   
     if ( $self->{'loglevel'} >= $lmap{debug}->[1] ) {
-        $self->{logfh}->print( hexdump( $_[0], { suppress_warnings => 1 } ) )
-          if defined $_[0];
+        $self->{logfh}->print( "  length : [$len]\n");
+        $self->{logfh}->print( hexdump( $data, { suppress_warnings => 1 } ) )
     }
     return $self;
 }

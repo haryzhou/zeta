@@ -190,15 +190,15 @@ sub on_accept {
     #
     # 报文检测
     #
-    if ( $_[HEAP]{config}->{interval} ) {
-        $_[HEAP]{check_id} = $_[KERNEL]->alarm_set( 'on_check' => $config->{interval} + time() );
+    if ( $_[HEAP]{config}{interval} ) {
+        $_[HEAP]{check_id} = $_[KERNEL]->alarm_set( 'on_check' => $_[HEAP]{config}{interval}+time() );
     }
 
     #
     # 超时检测
     #
-    if ( $_[HEAP]{config}->{timeout} ) {
-        $_[HEAP]{timeout_id} = $_[KERNEL]->alarm_set( 'on_timeout' => $config->{timeout} + time() );
+    if ( $_[HEAP]{config}{timeout} ) {
+        $_[HEAP]{timeout_id} = $_[KERNEL]->alarm_set('on_timeout' => $_[HEAP]{config}{timeout}+time());
     }
 
     #
@@ -214,7 +214,7 @@ sub on_accept {
     }
     else {
         unless ($rtn) {
-            $_[KERNEL]->post( 'adapter', 'on_session_join', [ $_[HEAP]{config}->{name}, $_[HEAP]{config}->{idx} ] );
+            $_[KERNEL]->post( 'adapter', 'on_session_join', [ $_[HEAP]{config}{name}, $_[HEAP]{config}{idx} ] );
         }
     }
     return 1;
@@ -231,7 +231,7 @@ sub on_tick {
     #
     if ( $_[HEAP]{check_id} ) {
         $_[KERNEL]->alarm_remove( $_[HEAP]{check_id} );
-        $_[HEAP]{check_id} = $_[KERNEL]->alarm_set( 'on_check' => $_[HEAP]{config}->{interval} + time() );
+        $_[HEAP]{check_id} = $_[KERNEL]->alarm_set( 'on_check' => $_[HEAP]{config}{interval} + time() );
     }
 
     $_[KERNEL]->delay( 'on_tick' => 4 );
@@ -244,7 +244,7 @@ sub on_check {
 
     if ( $_[HEAP]{check_id} ) {
         $_[KERNEL]->alarm_remove( $_[HEAP]{check_id} );
-        $_[HEAP]{check_id} = $_[KERNEL]->alarm_set( 'on_check' => $_[HEAP]{config}->{interval} + time() );
+        $_[HEAP]{check_id} = $_[KERNEL]->alarm_set( 'on_check' => $_[HEAP]{config}{interval}+time() );
     }
 
     $_[HEAP]{dr}->put('');  # attention
@@ -271,7 +271,7 @@ sub on_remote_data {
     #
     if ( $_[HEAP]{timeout_id} ) {
         $_[KERNEL]->alarm_remove( $_[HEAP]{timeout_id} );
-        $_[HEAP]{timeout_id} = $_[KERNEL]->alarm_set( 'on_timeout' => $_[HEAP]{config}->{timeout} + time() );
+        $_[HEAP]{timeout_id} = $_[KERNEL]->alarm_set('on_timeout' => $_[HEAP]{config}{timeout}+time());
     }
 
     unless ( $_[ARG0] ) {
@@ -279,19 +279,12 @@ sub on_remote_data {
         return 1;
     }
 
-    #
-    # socket 日志
-    #
-    my $len = length $_[ARG0];
-    $_[HEAP]{logger}->debug("recv data\n  length : [$len]");
-    $_[HEAP]{logger}->debug_hex($_[ARG0]);
-
     $_[KERNEL]->post(
         'adapter',
         'on_remote_data',
         {
             src    => $_[HEAP]{config}->{name},
-            packet => $_[ARG0],
+            packet => $_[HEAP]{class}->_packet($_[HEAP], $_[ARG0]),
         }
     );
 
@@ -304,22 +297,16 @@ sub on_remote_data {
 sub on_adapter_data {
 
     my $logger = $_[HEAP]{logger};
-    $logger->debug( "got adapter data:\n" . Data::Dump->dump( $_[ARG0] ) );
-
-    #
-    # socket 日志
-    #
-    my $len = length $_[ARG0]->{packet};
-    $logger->debug("send data\n  length : [$len]");
-    $logger->debug_hex($_[ARG0]->{packet});
+    # $logger->debug( "got adapter data:\n" . Data::Dump->dump( $_[ARG0] ) );
 
     # 发送数据到机构
-    $_[HEAP]{dr}->put( $_[ARG0]->{packet} ) if $_[HEAP]{dr} && $_[ARG0]->{packet};
+    my $packet = $_[HEAP]{class}->_adapter($_[HEAP], $_[ARG0]);
+    $_[HEAP]{dr}->put( $packet ) if $_[HEAP]{dr} && $packet;
 
     # 重置check
     if ( $_[HEAP]{check_id} ) {
         $_[KERNEL]->alarm_remove( $_[HEAP]{check_id} );
-        $_[HEAP]{check_id} = $_[KERNEL]->alarm_set( 'on_check' => $_[HEAP]{config}->{interval} + time() );
+        $_[HEAP]{check_id} = $_[KERNEL]->alarm_set('on_check' => $_[HEAP]{config}{interval}+time());
     }
 
 }
@@ -377,22 +364,25 @@ sub _on_accept {
 }
 
 #
-#
+# 从远端数据取出业务数据
 #
 sub _packet {
     my $class = shift;
     my $heap  = shift;
     my $rd    = shift;
+    $heap->{logger}->debug_hex("recv data<<<<<<<<:", $rd);
     return $rd;
 }
 
 #
-#
+# 从adapter数据构造packet
 #
 sub _adapter {
     my $class = shift;
     my $heap  = shift;
     my $ad    = shift;
+
+    $heap->{logger}->debug_hex("send data>>>>>>>>:", $ad->{packet});
     return $ad->{packet};
 }
 

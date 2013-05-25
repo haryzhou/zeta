@@ -13,7 +13,7 @@ use HTTP::Request::Common;
 use Time::HiRes qw/gettimeofday/;
 
 #
-# ¶¨ÖÆon_start
+# 设置filter
 #
 sub _on_start {
 
@@ -36,14 +36,8 @@ sub _packet {
     my $res   = shift;
 
     my $data =  $res->content();
-    my $len = length $data;
-    if ($len > 0) {
-        $heap->{logger}->debug("recv data\n  length : [$len]");
-        $heap->{logger}->debug_hex($data);
-    }
-    else {
-        $heap->{logger}->debug("recv data\n  length : [0]");
-    }
+    $heap->{logger}->debug_hex("recv data<<<<<<<<:", $data);
+
     return $data;
 
 }
@@ -51,20 +45,13 @@ sub _packet {
 #
 # 发送请求
 #
-sub _request {
+sub _adapter {
 
     my $class = shift;
     my $heap  = shift;
     my $data  = shift;
 
-    my $len = length $data;
-    if ($len > 0) {
-        $heap->{logger}->debug("send data\n  length : [$len]");
-        $heap->{logger}->debug_hex($data);
-    }
-    else {
-        $heap->{logger}->debug("send data\n  length : [0]");
-    }
+    $heap->{logger}->debug_hex("send data>>>>>>>>:",  $data);
 
     my $config = $heap->{config};
     my $url = "http://$config->{remoteaddr}:$config->{remoteport}" . $data->{path};

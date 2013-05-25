@@ -37,7 +37,7 @@ sub _init {
     # load the config file
     my $conf_data = [];
     my $fh;
-    if ('IO' eq ref $args->{conf}) {
+    if ('GLOB' eq ref $args->{conf}) {
         $fh = $args->{conf};
     }
     else {

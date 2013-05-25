@@ -59,19 +59,18 @@ sub on_start {
 
     $_[HEAP]{logger} = $_[ARG0];
     $_[HEAP]{config} = $_[ARG1];
-    $_[HEAP]{class}  = delete $_[HEAP]{config}->{class};
-    $_[KERNEL]
-      ->alias_set( $_[HEAP]{config}->{name} . "." . $_[HEAP]{config}->{idx} );
+    $_[HEAP]{class}  = delete $_[HEAP]{config}{class};
+    $_[KERNEL]->alias_set($_[HEAP]{config}{name} . "." . $_[HEAP]{config}{idx} );
 
     ######################################
     # 过滤器codec
     ######################################
-    if ( $_[HEAP]{config}->{codec} ) {
-        if ( $_[HEAP]{config}->{codec} =~ /ins\s+(\d+)/ ) {
+    if ( $_[HEAP]{config}{codec} ) {
+        if ( $_[HEAP]{config}{codec} =~ /ins\s+(\d+)/ ) {
             $_[HEAP]{filter} = "POE::Filter::Block";
             $_[HEAP]{fargs} = [ LengthCodec => &ascii_n($1) ],;
         }
-        elsif ( $_[HEAP]{config}->{codec} =~ /nac\s+(\d+)/ ) {
+        elsif ( $_[HEAP]{config}{codec} =~ /nac\s+(\d+)/ ) {
             $_[HEAP]{filter} = "POE::Filter::Block";
             $_[HEAP]{fargs} = [ LengthCodec => &binary_n($1) ],;
         }
@@ -118,7 +117,7 @@ sub on_connect {
 
     #  通知session line leave. if是判断上一状态不是(on_setup, on_connect)
     if ( $_[CALLER_STATE] ne 'on_setup' && $_[CALLER_STATE] ne 'on_connect' ) {
-        $logger->warn( "line[$_[HEAP]{config}->{idx}] leaved, state[$_[CALLER_STATE]]");
+        $logger->warn( "line[$_[HEAP]{config}{idx}] leaved, state[$_[CALLER_STATE]]");
         $_[KERNEL]->post( 'adapter', 'on_session_leave', [ $config->{name}, $config->{idx} ] );
     }
 
@@ -168,17 +167,17 @@ sub on_connect {
     #
     # 报文检测
     #
-    if ( $_[HEAP]{config}->{interval} ) {
+    if ( $_[HEAP]{config}{interval} ) {
         $logger->debug("begin set check alarm...");
-        $_[HEAP]{check_id} = $_[KERNEL]->alarm_set( 'on_check' => $config->{interval} + time() );
+        $_[HEAP]{check_id} = $_[KERNEL]->alarm_set('on_check' => $_[HEAP]{config}{interval}+time());
     }
 
     #
     # 超时检测
     #
-    if ( $_[HEAP]{config}->{timeout} ) {
+    if ( $_[HEAP]{config}{timeout} ) {
         $logger->debug("begin set timeout alarm...");
-        $_[HEAP]{timeout_id} = $_[KERNEL]->alarm_set( 'on_timeout' => $config->{timeout} + time() );
+        $_[HEAP]{timeout_id} = $_[KERNEL]->alarm_set('on_timeout' => $_[HEAP]{config}{timeout}+time());
     }
 
     ######################################
@@ -195,7 +194,7 @@ sub on_connect {
     }
     else {
         unless ($rtn) {
-            $_[KERNEL]->post( 'adapter', 'on_session_join', [ $_[HEAP]{config}->{name}, $_[HEAP]{config}->{idx} ] );
+            $_[KERNEL]->post( 'adapter', 'on_session_join', [ $_[HEAP]{config}{name}, $_[HEAP]{config}->{idx} ] );
         }
     }
     return 1;
@@ -209,12 +208,12 @@ sub on_tick {
     $_[HEAP]{logger}->debug("on_tick is called");
     $_[HEAP]{da}->put('');
 
-    if ( $_[HEAP]{config}->{interval} ) {
+    if ( $_[HEAP]{config}{interval} ) {
         $_[KERNEL]->alarm_remove( $_[HEAP]{check_id} );
-        $_[HEAP]{check_id} = $_[KERNEL]->alarm_set( 'on_check' => $_[HEAP]{config}->{interval} + time() );
+        $_[HEAP]{check_id} = $_[KERNEL]->alarm_set('on_check' => $_[HEAP]{config}{interval}+time());
     }
 
-    $_[KERNEL]->delay( 'on_tick' => 4 );
+    $_[KERNEL]->delay('on_tick' => 4);
 }
 
 ######################################
@@ -224,7 +223,7 @@ sub on_check {
 
     if ( $_[HEAP]{check_id} ) {
         $_[KERNEL]->alarm_remove( $_[HEAP]{check_id} );
-        $_[HEAP]{check_id} = $_[KERNEL]->alarm_set( 'on_check' => $_[HEAP]{config}->{interval} + time() );
+        $_[HEAP]{check_id} = $_[KERNEL]->alarm_set( 'on_check' => $_[HEAP]{config}{interval}+time());
     }
 
     $_[HEAP]{logger}->debug("snd checkdata");
@@ -250,27 +249,23 @@ sub on_remote_data {
     #
     if ( $_[HEAP]{timeout_id} ) {
         $_[KERNEL]->alarm_remove( $_[HEAP]{timeout_id} );
-        $_[HEAP]{timeout_id} = $_[KERNEL] ->alarm_set( 'on_timeout' => $_[HEAP]{config}->{timeout} + time() );
+        $_[HEAP]{timeout_id} = $_[KERNEL] ->alarm_set('on_timeout' => $_[HEAP]{config}{timeout}+time());
     }
 
     unless ( $_[ARG0] ) {
         $_[HEAP]{logger}->debug("got checkdata");
         return 1;
     }
-   
-    #
-    # socket日志
-    # 
-    my $len = length $_[ARG0];
-    $_[HEAP]{logger}->debug("recv data\n  length : [$len]");
-    $_[HEAP]{logger}->debug_hex($_[ARG0]);
+
+    # 从机构数 ---> 处理   
+    my $packet = $_[HEAP]{class}->_packet($_[HEAP], $_[ARG0]);
 
     $_[KERNEL]->post(
         'adapter',
         'on_remote_data',
         {
-            src    => $_[HEAP]{config}->{name},
-            packet => $_[ARG0],
+            src    => $_[HEAP]{config}{name},
+            packet => $packet,
         }
     );
 
@@ -283,21 +278,20 @@ sub on_remote_data {
 sub on_adapter_data {
 
     my $logger = $_[HEAP]{logger};
-    $logger->debug( "got adapter data:\n" . Data::Dump->dump( $_[ARG0] ) );
+    # $logger->debug( "got adapter data:\n" . Data::Dump->dump( $_[ARG0] ) );
 
     #
     # 重置check
     #
     if ( $_[HEAP]{check_id} ) {
         $_[KERNEL]->alarm_remove( $_[HEAP]{check_id} );
-        $_[HEAP]{check_id} = $_[KERNEL] ->alarm_set( 'on_check' => $_[HEAP]{config}->{interval} + time() );
+        $_[HEAP]{check_id} = $_[KERNEL]->alarm_set('on_check' => $_[HEAP]{config}{interval} + time() );
     }
 
-    my $len = length $_[ARG0]->{packet};
-    $logger->debug("send data\n  length : [$len]");
-    $logger->debug_hex($_[ARG0]->{packet});
+    # 子类处理: 从adapter  -----> 机构数据
+    my $packet = $_[HEAP]{class}->_adapter($_[HEAP], $_[ARG0]);
 
-    $_[HEAP]{da}->put( $_[ARG0]->{packet} ) if $_[HEAP]{da} && $_[ARG0]->{packet};
+    $_[HEAP]{da}->put($packet) if $_[HEAP]{da} && $packet;
  
 }
 
@@ -342,23 +336,25 @@ sub _on_connect {
 }
 
 #
-# 从对方发送数据中取出所需数据
+# 从remote数据取出业务数据
 #
 sub _packet {
-    my $class       = shift;
-    my $heap        = shift;
-    my $remote_data = shift;
-    return $remote_data;
+    my $class = shift;
+    my $heap  = shift;
+    my $rd    = shift;
+    $heap->{logger}->debug_hex("recv data<<<<<<<<:", $rd);
+    return $rd;
 }
 
 #
 # 从adapter数据构造一个机构数据
 #
 sub _adapter {
-    my $class   = shift;
-    my $heap    = shift;
-    my $ad_data = shift;
-    return $ad_data->{packet};
+    my $class = shift;
+    my $heap  = shift;
+    my $ad    = shift;
+    $heap->{logger}->debug_hex("send data>>>>>>>>:", $ad->{packet});
+    return $ad->{packet};
 }
 
 1;

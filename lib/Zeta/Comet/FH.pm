@@ -8,7 +8,7 @@ use warnings;
 use POE;
 use POE::Wheel::ReadWrite;
 use POE::Filter::Block;
-use Zeta::BlockCodec;
+use Zeta::Codec::Frame qw/ascii_n binary_n/;
 
 ############################################
 # args:
@@ -218,7 +218,7 @@ sub on_remote_data {
     #
     if ( $_[HEAP]{timeout_id} ) {
         $_[KERNEL]->alarm_remove( $_[HEAP]{timeout_id} );
-        $_[HEAP]{timeout_id} = $_[KERNEL]->alarm_set( 'on_timeout' => $_[HEAP]{config}->{timeout} + time() );
+        $_[HEAP]{timeout_id} = $_[KERNEL]->alarm_set( 'on_timeout' => $_[HEAP]{config}{timeout}+time());
     }
 
     unless ( $_[ARG0] ) {
@@ -232,7 +232,7 @@ sub on_remote_data {
         'on_remote_data',
         {
             src    => $_[HEAP]{config}->{name},
-            packet => $_[ARG0],
+            packet => $_[HEAP]{class}->_packet($_[HEAP], $_[ARG0]),
         }
     );
 
@@ -252,10 +252,14 @@ sub on_adapter_data {
     #
     if ( $_[HEAP]{check_id} ) {
         $_[KERNEL]->alarm_remove( $_[HEAP]{check_id} );
-        $_[HEAP]{check_id} = $_[KERNEL]->alarm_set( 'on_check' => $_[HEAP]{config}->{interval} + time() );
+        $_[HEAP]{check_id} = $_[KERNEL]->alarm_set( 'on_check' => $_[HEAP]{config}{interval}+time() );
     }
 
-    $_[HEAP]{fh}->put( $_[ARG0]->{packet} ) if $_[HEAP]{fh} && $_[ARG0]->{packet};
+    # 子类处理
+    my $packet = $_[HEAP]{class}->_adapter($_[HEAP], $_[ARG0]);
+
+    # 发送
+    $_[HEAP]{fh}->put( $packet ) if $_[HEAP]{fh} && defined $packet;
 }
 
 ######################################
@@ -338,20 +342,22 @@ sub _on_negotiation {
 # 从对方发送数据中取出所需数据
 #
 sub _packet {
-    my $class       = shift;
-    my $heap        = shift;
-    my $remote_data = shift;
-    return $remote_data;
+    my $class  = shift;
+    my $heap   = shift;
+    my $rd     = shift;
+    $heap->{logger}->debug_hex("recv data<<<<<<<<:", $rd);
+    return $rd;
 }
 
 #
 # 从adapter数据构造一个机构数据
 #
 sub _adapter {
-    my $class   = shift;
-    my $heap    = shift;
-    my $ad_data = shift;
-    return $ad_data->{packet};
+    my $class = shift;
+    my $heap  = shift;
+    my $ad    = shift;
+    $heap->{logger}->debug_hex("send data>>>>>>>>:", $ad->{packet});
+    return $ad->{packet};
 }
 
 #

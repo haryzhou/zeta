@@ -1,8 +1,8 @@
 #!/usr/bin/perl
-use Zeta::POE::TCP;
+use Zeta::POE::TCPD;
 use POE;
 
-Zeta::POE::TCP->spawn( 
+Zeta::POE::TCPD->spawn( 
      port     => 8888, 
      callback => sub { 'hello world'; },
      codec    => 'ascii 4',

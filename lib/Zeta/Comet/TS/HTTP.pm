@@ -27,44 +27,30 @@ sub _on_start {
 sub _packet {
     my $class = shift;
     my $heap  = shift;
-    my $req   = shift;
+    my $rd    = shift;
 
-    warn "_packet is called with:\n" . Data::Dump->dump($req);
-    my $data =  $req->content();
-    my $len = length $data;
-    if ($len > 0) {
-        $heap->{logger}->debug("recv data\n  length : [$len]");
-        $heap->{logger}->debug_hex($data);
-    }   
-    else {
-        $heap->{logger}->debug("recv data\n  length : [0]");
-    }
+    warn "_packet is called with:\n" . Data::Dump->dump($rd);
+    my $data =  $rd->content();
+    $heap->{logger}->debug_hex("recv data<<<<<<<<:", $data);
     return $data;
 }
 
 #
 # 在发送给客户数据前的处理
 #
-sub _response {
+sub _adapter {
     my $class = shift;
     my $heap  = shift;
-    my $data  = shift;
+    my $ad    = shift;
 
-    my $len = length $data->{packet};
-    if ($len > 0) {
-        $heap->{logger}->debug("send data\n  length : [$len]");
-        $heap->{logger}->debug_hex($data->{packet});
-    }
-    else {
-        $heap->{logger}->debug("send data\n  length : [0]");
-    }
+    $heap->{logger}->debug_hex("send data>>>>>>>>:", $ad->{packet});
 
     # $heap->{logger}->debug( "_response got data:\n" . Data::Dump->dump($data) );
     my $response = HTTP::Response->new( 200, "OK" );
-    $response->header( "Content-Length" => length $data->{packet} );
+    $response->header( "Content-Length" => length $ad->{packet} );
     $response->header( "Content-Type"   => "text/html;charset=utf-8" );
     $response->header( "Cache-Control"  => "private" );
-    $response->content( $data->{packet} );
+    $response->content( $ad->{packet} );
     return $response;
 }
 

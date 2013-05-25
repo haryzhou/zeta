@@ -10,7 +10,7 @@ use warnings;
 #  定制接口:
 #  1>  _on_start  :
 #  2>  _packet    : 从remote  data 取出业务数据
-#  3>  _request   : 从adapter data 构造请求
+#  3>  _adpater   : 从adapter data 构造请求
 ################################
 
 use Time::HiRes qw/gettimeofday tv_interval/;
@@ -117,13 +117,13 @@ sub on_setup {
 
     if ( $_[CALLER_STATE] ne '_start' && $_[CALLER_STATE] ne 'on_setup' ) {
         $_[HEAP]{logger}->warn("line[$_[HEAP]{config}->{idx}] leaved");
-        $_[KERNEL]->post( 'adapter', 'on_session_leave', [ $_[HEAP]{config}->{name}, $_[HEAP]{config}->{idx}, ] );
+        $_[KERNEL]->post('adapter', 'on_session_leave', [$_[HEAP]{config}{name}, $_[HEAP]{config}{idx}, ] );
     }
 
     #
     # 告知adapter session line joined
     #
-    $_[KERNEL]->post( 'adapter', 'on_session_join', [ $_[HEAP]{config}->{name}, $_[HEAP]{config}->{idx}, ] );
+    $_[KERNEL]->post('adapter', 'on_session_join', [$_[HEAP]{config}{name}, $_[HEAP]{config}{idx}]);
     return 1;
 }
 
@@ -195,7 +195,7 @@ sub on_adapter_data {
     ######################
     # 连接客户端
     ######################
-    $logger->debug( "begin connect to [$config->{remoteaddr}:$config->{remoteport}]");
+    # $logger->debug( "begin connect to [$config->{remoteaddr}:$config->{remoteport}]");
     my $tc_sock = IO::Socket::INET->new(
         PeerHost => $config->{remoteaddr},
         PeerPort => $config->{remoteport},
@@ -205,7 +205,7 @@ sub on_adapter_data {
         $logger->error( "can not connect to [$config->{remoteaddr}:$config->{remoteport}]");
         return;
     }
-    $logger->debug( "connected to server [$config->{remoteaddr}:$config->{remoteport}]");
+    # $logger->debug( "connected to server [$config->{remoteaddr}:$config->{remoteport}]");
 
     ######################
     # Filter
@@ -233,7 +233,7 @@ sub on_adapter_data {
     }
 
     # 子类化处理
-    my $req = $_[HEAP]{class}->_request( $_[HEAP], $_[ARG0] );
+    my $req = $_[HEAP]{class}->_adpater( $_[HEAP], $_[ARG0] );
 
     # 发送请求到机构
     $tc->put($req) if $req;
@@ -266,40 +266,25 @@ sub _on_start {
 #
 # 从adapter data 构造一个request
 #
-sub _request {
+sub _adpater {
     my $class = shift;
     my $heap  = shift;
-    my $data  = shift;
-
-    my $len = length $data->{packet};
-    if ($len > 0) {
-        $heap->{logger}->debug("send data\n  length : [$len]");
-        $heap->{logger}->debug_hex($data->{packet});
-    }
-    else {
-        $heap->{logger}->debug("send data\n  length : [0]");
-    }
-
-    return $data->{packet};
+    my $ad    = shift;
+    $heap->{logger}->debug_hex("send data>>>>>>>>:", $ad->{packet});
+    return $ad->{packet};
 }
 
 #
 # 从remote data 取出业务数据
 #
 sub _packet {
+
     my $class = shift;
     my $heap  = shift;
-    my $data  = shift;
+    my $rd    = shift;
 
-    my $len = length $data;
-    if ($len > 0) {
-        $heap->{logger}->debug("recv data\n  length : [$len]");
-        $heap->{logger}->debug_hex($data);
-    }
-    else {
-        $heap->{logger}->debug("recv data\n  length : [0]");
-    }
-    return $data;
+    $heap->{logger}->debug_hex("recv data<<<<<<<<:", $rd);
+    return $rd;
 }
 
 1;

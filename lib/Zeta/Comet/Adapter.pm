@@ -34,17 +34,17 @@ sub spawn {
 
     my $session;
     unless ( $session = POE::Session->create(
-            'package_states' => [
-                $class => {
-                    _start           => 'on_start',
-                    on_remote_data   => 'on_remote_data',      # got remote data
-                    on_adapter_data  => 'on_adapter_data',     # got pack data
-                    on_session_join  => 'on_session_join',     # session join
-                    on_session_leave => 'on_session_leave',    # session leave
-                },
-            ],
-            args => [$args],
-        ))
+        'package_states' => [
+            $class => {
+                _start           => 'on_start',
+                on_remote_data   => 'on_remote_data',      # got remote data
+                on_adapter_data  => 'on_adapter_data',     # got pack data
+                on_session_join  => 'on_session_join',     # session join
+                on_session_leave => 'on_session_leave',    # session leave
+            },
+        ],
+        args => [$args],
+    ))
     {
         cluck "can not POE::Session->create";
         return;
@@ -64,7 +64,7 @@ sub on_start {
 
     # 读wheel，只能是File
     my $w = POE::Wheel::ReadWrite->new(
-        Handle     => delete $args->{reader} || \*STDIN,
+        Handle     => $args->{reader} || \*STDIN,
         InputEvent => 'on_adapter_data',
         Filter     => POE::Filter::Block->new(LengthCodec => ascii_n(4)),
     );
@@ -204,16 +204,16 @@ sub get_line_session {
 #########################################################################
 sub on_session_join {
 
-    my $iname = $_[ARG0]->[0];  # 哪个机构
-    my $idx   = $_[ARG0]->[1];  # 第几条线路
-    my $args  = $_[ARG0]->[2];  # cookie
+    my $iname = $_[ARG0][0];  # 哪个机构
+    my $idx   = $_[ARG0][1];  # 第几条线路
+    my $args  = $_[ARG0][2];  # cookie
 
     my $logger = $_[HEAP]{logger};
     $logger->info("$iname line[$idx] join");
-    $_[HEAP]{sessions}->{$iname}->[$idx] = $iname . "." . $idx;
+    $_[HEAP]{sessions}{$iname}[$idx] = $iname . "." . $idx;
     $logger->info( "now sessions:\n" . Data::Dump->dump( $_[HEAP]{sessions} ) );
 
-    # 客户子类化: 都有线路加入后如何处理, 默认_on_session_join不作任何处理
+    # 客户子类化: 当有线路加入后如何处理, 默认_on_session_join不作任何处理
     unless ( $_[HEAP]{class}->_on_session_join( $_[HEAP], $_[KERNEL], $args ) ) {
         $logger->error("_on_session_join error");
         return 1;
@@ -235,7 +235,7 @@ sub on_session_leave {
 
     my $logger = $_[HEAP]{logger};
     $logger->info("$iname line[$idx] leave");
-    $_[HEAP]{sessions}->{$iname}->[$idx] = undef;
+    $_[HEAP]{sessions}{$iname}[$idx] = undef;
     $logger->debug( "sessions:\n" . Data::Dump->dump( $_[HEAP]{sessions} ) );
 
     # 客户子类化:

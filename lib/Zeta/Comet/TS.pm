@@ -7,7 +7,7 @@ package Zeta::Comet::TS;
 #  定制接口回调:
 #  1>  _on_start  :
 #  2>  _packet    : 从remote  data 取出业务报文
-#  3>  _response  : 从adapter data 构造response
+#  3>  _adapter  : 从adapter data 构造response
 #############################
 
 use strict;
@@ -289,7 +289,7 @@ sub on_adapter_data {
     $_[KERNEL]->alarm_remove( delete $_[HEAP]{ts}{$sid}->{to} );
 
     # 子类处理
-    my $res = $_[HEAP]{class}->_response( $_[HEAP], $data );
+    my $res = $_[HEAP]{class}->_adapter( $_[HEAP], $data );
 
     # 发送数据到机构
     $_[HEAP]{ts}{$sid}->{ts}->put($res) if $res;
@@ -345,20 +345,13 @@ sub _on_start {
 #
 # 从adapter data构造response
 #
-sub _response {
+sub _adapter {
     my $class = shift;
     my $heap  = shift;
-    my $data  = shift;
+    my $ad    = shift;
 
-    my $len = length $data->{packet};
-    if ($len > 0) {
-        $heap->{logger}->debug("send data\n  length : [$len]");
-        $heap->{logger}->debug_hex($data->{packet});
-    }
-    else {
-        $heap->{logger}->debug("send data\n  length : [0]");
-    }
-    return $data->{packet};
+    $heap->{logger}->debug_hex("send data>>>>>>>>:",  $ad->{packet});
+    return $ad->{packet};
 }
 
 #
@@ -367,17 +360,10 @@ sub _response {
 sub _packet {
     my $class = shift;
     my $heap  = shift;
-    my $data  = shift;
+    my $rd    = shift;
 
-    my $len = length $data;
-    if ($len > 0) {
-        $heap->{logger}->debug("recv data\n  length : [$len]");
-        $heap->{logger}->debug_hex($data);
-    }
-    else {
-        $heap->{logger}->debug("recv data\n  length : [0]");
-    }
-    return $data;
+    $heap->{logger}->debug_hex("recv data<<<<<<<<:", $rd);
+    return $rd;
 }
 
 1;
