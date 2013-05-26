@@ -22,17 +22,9 @@ helper logger => sub { $logger };
 # internal child logger clone
 # $self->logger_child('ModuleA', 'ERROR');
 ##
-helper logger_child => sub {
-    my $self     = shift;
-    my $name     = shift;
-    my $loglevel = shift;
-    return $logger->clone( "$name.log", $loglevel );
-};
-
-helper logger_reset => sub {
-    shift;
-    $logger = shift;
-};
+helper logger_child => sub { my ($self, $name, $loglevel) = @_; $logger->clone( "$name.log", $loglevel ); };
+helper logger_reset => sub { shift; $logger = shift; };
+helper logger_monq  => sub { $logger->{logmonq};  };
 
 
 
