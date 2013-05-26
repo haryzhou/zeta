@@ -58,7 +58,11 @@ sub launch {
     
     # 日志初始化
     $self->load_plugin('logger');
-    $self->init_plugin('logger',logurl => $config->{logurl}, loglevel => $config->{loglevel}, monq => $config->{logmonq});
+    $self->init_plugin('logger',
+        logurl   => $config->{logurl}, 
+        loglevel => $config->{loglevel}, 
+        logmonq  => $config->{logmonq}
+    );
     
     # 加载plugin
     for my $name ( qw/process channel /) {

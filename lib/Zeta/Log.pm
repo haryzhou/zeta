@@ -95,7 +95,7 @@ sub new {
     if ( exists $config{'loglevel'} ) { $logc->{'loglevel'} = $config{'loglevel'}; }
     if ( exists $config{'handle'}   ) { $logc->{'handle'}   = $config{'handle'};   }
     if ( exists $config{'logurl'}   ) { $logc->{'logurl'}   = $config{'logurl'};   }
-    if ( exists $config{'monq'}     ) { $logc->{'monq'}     = $config{'monq'};     }
+    if ( exists $config{'logmonq'}  ) { $logc->{'logmonq'}  = $config{'logmonq'};     }
 
     #
     # 非pipereader模式下:  loglevel必须存在
@@ -273,8 +273,8 @@ sub new {
     }
 
     # 监控队列
-    if ( $logc->{monq} ) {
-        $self->{monq} = Zeta::IPC::MsgQ->new($logc->{monq});
+    if ( $logc->{logmonq} ) {
+        $self->{logmonq} = Zeta::IPC::MsgQ->new($logc->{logmonq});
     }
 
     {
@@ -294,9 +294,9 @@ sub new {
                     $self->print_log( $pkg, $line, $prefix, @_ );
                 }
                 # 发送报警信息到监控队列
-                if ($self->{monq} && $level < $mlevel) {
+                if ($self->{logmonq} && $level < $mlevel) {
                     my $mod = $0;
-                    $self->{monq}->send(<<EOF, $$);
+                    $self->{logmonq}->send(<<EOF, $$);
 module  : [$mod] 
 package : [$pkg] 
 line    : [$line] 
@@ -550,7 +550,7 @@ __END__
   my $l3 = Zeta::Log->new(
     loglevel  => 'DEBUG',
     logurl    => 'file://$A_HOME/a.log',
-    monq      => 9898,      # monitor queue for warning!!!!
+    logmonq   => 9898,      # monitor queue for warning!!!!
   ) or die "can not Zeta::Log->new";
   
   $l3->debug("this is a debug");
