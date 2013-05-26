@@ -92,18 +92,10 @@ sub new {
     #
     # 函数参数优先级高于配置文件
     #
-    if ( exists $config{'loglevel'} ) {
-        $logc->{'loglevel'} = $config{'loglevel'};
-    }
-    if ( exists $config{'handle'} ) {
-        $logc->{'handle'} = $config{'handle'};
-    }
-    if ( exists $config{'logurl'} ) {
-        $logc->{'logurl'} = $config{'logurl'};
-    }
-    if ( exists $config{'monq'} ) {
-        $logc->{'monq'} = $config{'monq'};
-    }
+    if ( exists $config{'loglevel'} ) { $logc->{'loglevel'} = $config{'loglevel'}; }
+    if ( exists $config{'handle'}   ) { $logc->{'handle'}   = $config{'handle'};   }
+    if ( exists $config{'logurl'}   ) { $logc->{'logurl'}   = $config{'logurl'};   }
+    if ( exists $config{'monq'}     ) { $logc->{'monq'}     = $config{'monq'};     }
 
     #
     # 非pipereader模式下:  loglevel必须存在
