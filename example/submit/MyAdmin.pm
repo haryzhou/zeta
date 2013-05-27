@@ -44,9 +44,7 @@ sub handle {
 __END__
 
 test:
-
 {"action":"run","param":{"name":"Zhary"}}
-
 echo '{"action":"run","param":{"name":"Zhary"}}' | POST 'http://localhost:8888/'
 
 

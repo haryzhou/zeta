@@ -8,6 +8,7 @@ use Data::Dump;
 use Zeta::Log;
 use integer;
 use Encode;
+use Carp;
 
 use constant  ID_IDX    => 0;
 use constant  TYPE_IDX  => 1;
@@ -37,13 +38,14 @@ sub _init {
     # load the config file
     my $conf_data = [];
     my $fh;
-    if ('GLOB' eq ref $args->{conf}) {
+    my $rname = ref $args->{conf};
+    if ( $rname eq 'IO' || $rname eq 'IO::File' || $rname eq 'GLOB') {
         $fh = $args->{conf};
     }
     else {
         $fh = IO::File->new("< $args->{conf}");
         unless($fh) {
-            die "config file : $args->{conf} not exist";
+            confess "config file : $args->{conf} not exist";
             exit;
         }
     }
