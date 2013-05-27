@@ -42,10 +42,10 @@ sub _init {
     }
     else {
         $fh = IO::File->new("< $args->{conf}");
-    }
-    unless($fh) {
-        die "config file : $args->{conf} not exist";
-        exit;
+        unless($fh) {
+            die "config file : $args->{conf} not exist";
+            exit;
+        }
     }
     while (<$fh>) {
         unless (/^#/) {
