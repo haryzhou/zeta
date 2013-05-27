@@ -36,8 +36,8 @@ helper process_running => sub { \%running };
 helper process_count   => sub { keys %running };
 helper process_stopped => sub { \%stopped };
 helper process_logname => sub { $logname  };
-helper process_name   => sub {
-    my @run = reverse %running;
+helper process_name    => sub {
+    my %run = reverse %running;
     return $running{$$};
 };
 
