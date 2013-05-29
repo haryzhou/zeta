@@ -296,12 +296,7 @@ sub new {
                 # 发送报警信息到监控队列
                 if ($self->{logmonq} && $level < $mlevel) {
                     my $mod = $0;
-                    $self->{logmonq}->send(<<EOF, $$);
-module  : [$mod] 
-package : [$pkg] 
-line    : [$line] 
-errmsg  : [@_]
-EOF
+                    $self->{logmonq}->send("[$mod|$pkg|$line|@_]", $$);
                 }
                 return $self;
             };
