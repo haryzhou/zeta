@@ -34,6 +34,9 @@ sub spawn {
 #    para    => 'xxx.cfg',
 #    codec   => ''
 #    alias   => 'tcpd'
+#    events  => {
+#        event => sub {},
+#    },
 # )
 # -----------------------------------
 # 参数方式2:
@@ -43,6 +46,9 @@ sub spawn {
 #    para    => 'xxx.cfg',
 #    codec   => '',
 #    alias   => 'tcpd'
+#    events  => {
+#        event => sub {},
+#    },
 # )
 # -----------------------------------
 # 参数方式3:
@@ -51,6 +57,9 @@ sub spawn {
 #    callback => \&func,
 #    codec    => 'ascii n, binary n, http'
 #    alias   => 'tcpd'
+#    events  => {
+#        event => sub {},
+#    },
 # )
 #
 sub _spawn {
@@ -58,6 +67,8 @@ sub _spawn {
     my $class = shift;
     my $args  = {@_};
     Data::Dump->dump($args) if DEBUG;
+
+    my $events = delete $args->{events};
 
     # 直接提供了lfd
     unless($args->{lfd}) {
@@ -125,6 +136,9 @@ sub _spawn {
                     ErrorEvent  => "on_server_error",
                 );
             },
+
+            # 用户提供事件处理
+            %$events,
 
             # 收到连接请求
             on_client_accept => sub {
