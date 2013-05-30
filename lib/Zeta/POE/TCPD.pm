@@ -33,6 +33,7 @@ sub spawn {
 #    module  => 'XXX::Admin',
 #    para    => 'xxx.cfg',
 #    codec   => ''
+#    alias   => 'tcpd'
 # )
 # -----------------------------------
 # 参数方式2:
@@ -41,6 +42,7 @@ sub spawn {
 #    module  => 'XXX::Admin',
 #    para    => 'xxx.cfg',
 #    codec   => '',
+#    alias   => 'tcpd'
 # )
 # -----------------------------------
 # 参数方式3:
@@ -48,6 +50,7 @@ sub spawn {
 #    lfd      => $lfd,
 #    callback => \&func,
 #    codec    => 'ascii n, binary n, http'
+#    alias   => 'tcpd'
 # )
 #
 sub _spawn {
@@ -110,6 +113,7 @@ sub _spawn {
     return POE::Session->create(
         inline_states => {
             _start => sub {
+                $_[KERNEL]->alias_set($args->{alias}) || 'tcpd';
                 $_[HEAP]{la} = POE::Wheel::ListenAccept->new(
                     Handle => $args->{lfd} || IO::Socket::INET->new(
                         LocalPort => $args->{port},
