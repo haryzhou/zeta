@@ -5,11 +5,12 @@ use Zeta::POE::HTTPD;
 use POE;
 
 Zeta::POE::HTTPD->spawn( 
+     alias  => 'httpd',
      port   => 8888, 
      module => 'MyAdmin',
      para   => [ ],
 );
 $poe_kernel->run();
-zkernel->process_stopall();
+
 exit 0;
 

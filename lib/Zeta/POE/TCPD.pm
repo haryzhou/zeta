@@ -121,10 +121,11 @@ sub _spawn {
     }
 
     # 创建POE
+    my @events = () || %$events if $events;
     return POE::Session->create(
         inline_states => {
             _start => sub {
-                $_[KERNEL]->alias_set($args->{alias}) || 'tcpd';
+                $_[KERNEL]->alias_set($args->{alias} || 'tcpd');
                 $_[HEAP]{la} = POE::Wheel::ListenAccept->new(
                     Handle => $args->{lfd} || IO::Socket::INET->new(
                         LocalPort => $args->{port},
@@ -138,7 +139,7 @@ sub _spawn {
             },
 
             # 用户提供事件处理
-            %$events,
+            @events,
 
             # 收到连接请求
             on_client_accept => sub {
