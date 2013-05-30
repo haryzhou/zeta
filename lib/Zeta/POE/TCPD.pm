@@ -22,7 +22,7 @@ BEGIN {
 
 sub spawn {
     my $class = shift;
-    $class->_spawn(@_);
+    return $class->_spawn(@_);
 }
 
 #
@@ -107,7 +107,7 @@ sub _spawn {
     }
 
     # 创建POE
-    POE::Session->create(
+    return POE::Session->create(
         inline_states => {
             _start => sub {
                 $_[HEAP]{la} = POE::Wheel::ListenAccept->new(

@@ -121,17 +121,17 @@ sub stat {
 }
 
 #
-# $q->msgrcv(\$data, $max, $mtype);
+# $q->msgrcv(\$data, $tref);
 #
 sub recv_nw {
     my $self  = shift;
-    my $dref  = shift;
-    my $max   = shift;
-    my $mtype = shift;
-    $mtype ||= 0;
-    unless ( msgrcv( $$self, $$dref, $max, $mtype, MSG_NOERROR | IPC_NOWAIT ) ) {
-        cluck "msgrcv error";
-        return;
+    my ($dref, $tref) = @_;
+
+    my $mtype = $$tref;
+    unless ( msgrcv( $$self, $$dref, 8192, $mtype, MSG_NOERROR | IPC_NOWAIT ) ) {
+        if ($!{EAGAIN}) {
+            return;
+        }
     }
     return $self;
 }
