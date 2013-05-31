@@ -5,6 +5,7 @@ use File::Path qw/mkpath/;
 use IO::File;
 
 unless (@ARGV == 1) {
+    die "usage: zgen project_name\n";
 }
 
 my $prj = $ARGV[0];
