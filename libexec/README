@@ -7,3 +7,9 @@ magent  :   应用监控-节点, 需要参数
             zcfg->{monq}
             zcfg->{msvr}{host}
             zcfg->{msvr}{port}
+
+stomp   :   消息中间件, 需要参数
+            zcfg->{stomp}{host}
+            zcfg->{stomp}{port}
+
+
