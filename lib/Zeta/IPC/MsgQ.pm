@@ -132,7 +132,7 @@ sub recv_nw {
         if ($!{ENOMSG}) {
             return;
         }
-        warn "system error";
+        warn "system error [$!]";
     }
     return $self;
 }
