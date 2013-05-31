@@ -17,16 +17,16 @@ use Data::Dump;
 #  zeta generate lite_app  zixapp
 #  zeta generate app zixapp
 #  zeta generate makefile
-# 
-
-
 
 #
 #  debug测试 -- 环境变量ZETA_DEBUG
 #
 #  命令行参数处理
 my $cfg_file;
-my $rtn = GetOptionsFromArray( \@{[@ARGV]}, "file|f=s" => \$cfg_file,);
+my $rtn = GetOptionsFromArray( 
+    \@{[@ARGV]}, 
+    "file|f=s" => \$cfg_file,
+);
 unless($rtn){
     &usage;
     exit 0;
