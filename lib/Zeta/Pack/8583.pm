@@ -50,16 +50,17 @@ sub _init {
         }
     }
     while (<$fh>) {
-        unless (/^#/) {
-            # remove the first empty element
-            s/^\s+//;
-            my $data = [split /\s+/, $_];
-            # store the first 5 elements
-            $conf_data->[@{$data}[0]] = [@{$data}[0..5]];
-        }
+        next if /^#/;
+        # remove the first empty element
+        s/^\s+//;
+        s/\s+$//;
+        next if /^$/;
+        my $data = [split /\s+/, $_];
+        # store the first 5 elements
+        $conf_data->[@{$data}[0]] = [@{$data}[0..5]];
     }
     for (my $i = 0; $i < @$conf_data; ++$i) {
-      $_=$conf_data->[$i];
+        $_ = $conf_data->[$i];
     }
     $fh->close;
     $self->{config} = $conf_data;

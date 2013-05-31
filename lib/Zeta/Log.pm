@@ -4,6 +4,7 @@ use warnings;
 use File::Basename;
 use Data::Dump;
 use Data::Hexdumper qw/hexdump/;
+use JSON::XS;
 
 BEGIN {
     no strict;
@@ -296,7 +297,17 @@ sub new {
                 # 发送报警信息到监控队列
                 if ($self->{logmonq} && $level < $mlevel) {
                     my $mod = $0;
-                    $self->{logmonq}->send("[$mod|$pkg|$line|@_]", $$);
+                    my $msg = encode_json({ mod => $mod, pkg => $pkg, line => $line, err => \@_ });
+                   
+                    # 监控队列满再发一次 
+                    unless($self->{logmonq}->send($msg, $$)) {
+                        # warn "发送失败, 重发";
+                        my $g1;
+                        my $g2 = 0;
+                        $self->{logmonq}->recv_nw(\$g1, \$g2);
+                        # warn "got old[$g1]";
+                        $self->{logmonq}->send($msg, $$) or warn "重发失败";
+                    }
                 }
                 return $self;
             };

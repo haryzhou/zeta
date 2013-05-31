@@ -76,7 +76,7 @@ sub send {
     unless ( msgsnd( $$self, pack( "l! a*", $mtype, $msg ), IPC_NOWAIT ) ) {
         if ( $!{EAGAIN} ) {
             warn "queue $$self is full, message dropped";
-            return $self;
+            return;
         }
     }
     return $self;

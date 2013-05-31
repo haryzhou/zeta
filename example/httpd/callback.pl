@@ -3,6 +3,7 @@
 use Zeta::Run;
 use Zeta::POE::HTTPD::JSON;
 use POE;
+use threads;
 
 Zeta::POE::HTTPD::JSON->spawn( 
      alias    => 'hj',
@@ -18,15 +19,6 @@ Zeta::POE::HTTPD::JSON->spawn(
              warn "@_";
          },
      },
-);
-
-POE::Session->create(
-    inline_states => {
-        _start => sub {
-            sleep 1;
-            $_[KERNEL]->post('hj', 'on_data', qw/a b c/);
-        },
-    }
 );
 
 $poe_kernel->run();
