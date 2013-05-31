@@ -129,9 +129,10 @@ sub recv_nw {
 
     my $mtype = $$tref;
     unless ( msgrcv( $$self, $$dref, 8192, $mtype, MSG_NOERROR | IPC_NOWAIT ) ) {
-        if ($!{EAGAIN}) {
+        if ($!{ENOMSG}) {
             return;
         }
+        warn "system error";
     }
     return $self;
 }
