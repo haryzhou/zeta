@@ -4,17 +4,25 @@ use warnings;
 use File::Path qw/mkpath/;
 use IO::File;
 
-unless (@ARGV == 1) {
-    die "usage: zgen project_name\n";
+unless (@ARGV == 2) {
+    &usage;
 }
 
-my $prj = $ARGV[0];
+my $prj = $ARGV[1];
 my $uprj = uc $prj;
+
+sub usage {
+    die <<EOF;
+usage: 
+    1. zgen app myapp
+    2. zgen lite_app myapp
+EOF
+}
 
 #
 # 建立目录
 #
-mkpath( [ map { "$prj/$_" } qw/ bin conf etc lib libexec log scratch t tmp / ], 0771 );
+mkpath( [ map { "$prj/$_" } qw/bin sbin conf etc lib libexec log scratch t tmp / ], 0771 );
 
 my $profile =<<EOF;
 export ZETA_HOME=\$HOME/workspace/zeta
@@ -311,6 +319,44 @@ EOF
 
 &write_file("$prj/Makefile.PL", $makefile);
 
+my $stopall =<<EOF;
+#!/bin/bash
+
+kill `cat \${$uprj}_HOME/log/zeta.pid`;
+rm -fr \${$uprj}_HOME/log/zeta.pid;
+
+EOF
+&write_file("$prj/sbin/stopall", $stopall);
+
+my $runall =<<EOF;
+#!/bin/bash
+
+cd \${$uprj}_HOME/log;
+
+zeta -f \${$uprj}_HOME/conf/zeta.conf;
+
+EOF
+&write_file("$prj/sbin/runall", $runall);
+
+
+my $restart =<<EOF;
+#!/bin/bash
+
+# 停止应用
+if [ -f "\${$uprj}_HOME/log/zeta.pid" ]; then 
+    kill `cat \${$uprj}_HOME/log/zeta.pid`;
+fi
+rm -fr \${$uprj}_HOME/log/zeta.pid;
+
+# 清理日志
+cd \${$uprj}_HOME/log;
+rm -fr *.log;
+
+zeta -f \${$uprj}_HOME/conf/zeta.conf;
+
+EOF
+&write_file("$prj/sbin/restart", $restart);
+
 
 print <<EOF;
 you can now edit:
@@ -326,7 +372,5 @@ sub write_file {
     my $fname = shift;
     IO::File->new("> $fname")->print(+shift);
 }
-
-
 
 
