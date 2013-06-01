@@ -18,4 +18,18 @@ sub _out {
 1;
 
 __END__
+=head1 NAME
+
+
+=head1 SYNOPSIS
+
+
+=head1 API
+
+
+=head1 Author & Copyright
+
+
+=cut
+
 

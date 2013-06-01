@@ -26,6 +26,7 @@ zeta运行原理(todo)
                         mode        => 'logger',
                         logurl      => "file://$ENV{TAPP_HOME}/log/zeta.log",
                         loglevel    => 'DEBUG',
+                        logmonq     -> 9493,   
                         channel     => [ qw/dispatch/ ],
                         name        => 'Zixapp',
                         plugin      => "$ENV{TAPP_HOME}/libexec/plugin.pl",
@@ -41,6 +42,7 @@ zeta运行原理(todo)
                            para      =>  [],
                            reap      =>  1,
                            size      =>  1,
+                           enable    =>  1,
                        },
                  },
          };
@@ -48,7 +50,7 @@ zeta运行原理(todo)
     2.2、zeta - kernel配置
          2.2.1、pid文件
          2.2.2、运行模式:process_tree, logger, loggerd
-         2.2.3、日志路径、级别
+         2.2.3、日志路径、级别、日志监控队列key
          2.2.4、插件加载钩子文件
          2.2.5、主控函数钩子文件以及参数
          2.2.6、预先建立的管道
