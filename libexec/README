@@ -4,12 +4,12 @@ mlogd   :   日志监控-HTTPD, 函数需要参数:
             size => 20
 
 magent  :   应用监控-节点, 需要参数
-            zcfg->{monq}
-            zcfg->{msvr}{host}
-            zcfg->{msvr}{port}
+            host => '192.168.1.10',
+            port => 9999,
+            monq => 9898,
 
 stomp   :   消息中间件, 需要参数
-            zcfg->{stomp}{host}
-            zcfg->{stomp}{port}
+            host => '192.168.1.10',
+            port => 9999,
 
 
