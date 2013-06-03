@@ -32,6 +32,13 @@ zeta运行原理(todo)
                         plugin      => "$ENV{TAPP_HOME}/libexec/plugin.pl",
                         main        => "$ENV{TAPP_HOME}/libexec/main.pl",
                         args        => [ ],
+
+                        # 一些预定义的模块
+                        with        => {
+                            mlogd   => { host => '127.0.0.1', port => '9999', size => 20   },
+                            magent  => { host => '127.0.0.1', port => '9999', monq => 9494 },
+                            stomp   => { host => '127.0.0.1', port => '9999',}
+                        },
                  },
 
                  module => {
@@ -55,6 +62,7 @@ zeta运行原理(todo)
          2.2.5、主控函数钩子文件以及参数
          2.2.6、预先建立的管道
          2.2.7、主控进程的显示名称(prctl name)
+         2.2.8、预定义模块(with)
 
     2.3、zeta - module配置
          2.3.1、 reader: STDIN从哪个管道读
