@@ -8,35 +8,36 @@ use POE;
 use Time::HiRes qw/sleep/;
 
 #
-# monq  => 
-# mhost =>
-# mport =>
+# monq => 
+# host =>
+# port =>
 #
 sub {
     my $args = { @_ };
     
-    # 获取配置与日志
-    my $zcfg = zkernel->zconfig();
-    my $logger = zlogger;
-    my $monq   = $zcfg->{monq};
-    
     my $cnt = 0;
     my $msvr;
+    my $logger = zlogger;
 
     # 连接监控服务器
     while(1) {
         $msvr = IO::Socket::INET->new(
-            PeerAddr => $zcfg->{msvr}{host},
-            PeerPort => $zcfg->{msvr}{port}
+            PeerAddr => $args->{host},
+            PeerPort => $args->{port}
         );
         
         unless($msvr) {
-            $logger->error("无法连接到监控服务器[$zcfg->{msvr}{host}:$zcfg->{msvr}{port}], retry...");
+            $logger->error("无法连接到监控服务器[$args->{host}:$args->{port}], retry...");
             sleep(0.5);
             next if $cnt++ < 10;
             exit 0;
         }
         last;
+    }
+
+    # 连接监控消息队列
+    my $monq = Zeta::IPC::MsgQ->new($args->{monq});
+    unless($monq) {
     }
 
     # 不断从监控队列中读取监控消息, 发送到监控服务器上

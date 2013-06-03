@@ -9,15 +9,6 @@ use Zeta::Run;
 use Data::Dump;
 
 #
-# my $cmd = shift;
-#
-#  todo :
-#-----------------------------------------------
-#  zeta hello
-#  zeta generate lite_app  zixapp
-#  zeta generate app zixapp
-#  zeta generate makefile
-
 #
 #  debug测试 -- 环境变量ZETA_DEBUG
 #
@@ -44,6 +35,37 @@ warn "zeta.conf:\n" if $ENV{ZETA_DEBUG};
 Data::Dump->dump($zcfg) if $ENV{ZETA_DEBUG};
 
 # [kernel] section 配置文件
+# pidfile     => "$ENV{ZERO_HOME}/log/zeta.pid",
+# mode        => 'logger',
+# logurl      => "file://$ENV{ZERO_HOME}/log/zeta.log",
+# loglevel    => 'DEBUG',
+# logmonq     => 9394,
+# channel     => [qw//],
+# name        => 'Zero',
+# plugin      => "$ENV{ZERO_HOME}/libexec/plugin.pl",
+# main        => "$ENV{ZERO_HOME}/libexec/main.pl",
+# args        => [ qw// ],
+# with        => {
+#     # 日志监控-HTTPD
+#     mlogd => {
+#         host => '127.0.0.1',
+#         port => '9999',
+#         size => 10,
+#     },
+#     # 监控节点进程
+#     magent => {
+#         host => '192.168.1.10',
+#         port => 100,
+#         monq => 9494,
+#     },
+#     # 消息队列服务器模拟
+#     stomp => {
+#         host => '127.0.0.1',
+#         port => '7777'
+#         dir  => '/tmp',
+#     },
+# },
+#
 my $kcfg = delete $zcfg->{kernel};  # kernel配置段
 
 # 检查args
@@ -80,6 +102,21 @@ unless( 'ARRAY' eq ref $kcfg->{channel}) {
 }
 
 #
+# 模块列表 = 配置模块 + with预定义模块
+#
+my $mcfg = delete $zcfg->{module};
+my $with = delete $kcfg->{with};
+for (keys %$with) {
+    my $name = 'Z' . $_;
+    $mcfg->{$name} = {
+        code  => "$ENV{ZETA_HOME}/libexec/$_.pl",
+        para  => [ %{$with->{$_}} ],
+        size  => 1,
+        reap  => 1,
+    },
+}
+
+#
 # 模块参数配置 
 # para    => [ qw/A B C file.conf/ ],
 # reader  => 'II',
@@ -91,7 +128,6 @@ unless( 'ARRAY' eq ref $kcfg->{channel}) {
 # plugin  => { db => [], xx => [] }
 # 
 #
-my $mcfg = delete $zcfg->{module};
 for my $mname (keys %$mcfg) {
     my $m = $mcfg->{$mname};
 
@@ -125,8 +161,9 @@ for my $mname (keys %$mcfg) {
     }
 }
 
-# 件文件
+# 插件
 my $pcfg = delete $kcfg->{plugin};
+
 
 # 启动 kernel
 zkernel->launch($kcfg);

@@ -17,8 +17,7 @@ use Zeta::POE::HTTPD::JSON;
 sub {
    my $args = { @_ };
     
-    # 获取配置与日志
-    my $zcfg = zkernel->zconfig();
+    # 获取日志
     my $monq = zkernel->logger_monq();
    
     # 启动HTTPD POE

@@ -8,21 +8,24 @@ use POE::Component::MessageQueue::Logger;
 use Carp;
 use strict;
 
+#
+# host => '127.0.0.1',
+# port => '9999',
+# dir  => '/tmp',
+#
 sub {
 
-    my $zcfg = zkernel->zconfig;
+    my $args = { @_ };
 
-    $SIG{__DIE__} = sub {
-        Carp::confess(@_);
-    };
+    $SIG{__DIE__} = sub { Carp::confess(@_); };
     
     # Force some logger output without using the real logger.
     $POE::Component::MessageQueue::Logger::LEVEL = 0;
    
     # default storage 
-    my $data_dir = "/tmp";
-    my $port     = $zcfg->{stomp}{port},
-    my $hostname = $zcfg->{stomp}{host},
+    my $data_dir = $args->{dir} || "/tmp";
+    my $port     = $args->{port},
+    my $hostname = $args->{host},
     my $timeout  = 4;
     my $throttle_max = 2;
     my $dft_args = {
@@ -39,5 +42,8 @@ sub {
     $poe_kernel->run();
     exit;
 };
+
+
+__END__
 
 
