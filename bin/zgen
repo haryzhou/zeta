@@ -19,12 +19,33 @@ usage:
 EOF
 }
 
-#
-# 建立目录
-#
+# 1. 建立目录
 mkpath( [ map { "$prj/$_" } qw/bin sbin conf etc lib libexec log scratch t tmp / ], 0771 );
 
-my $profile =<<EOF;
+# 2. 产生skeleton
+&gen_profile;
+&gen_zeta;
+&gen_appconf;
+&gen_plugin;
+&gen_main;
+&gen_gitignore;
+&gen_makefile;
+&gen_stopall;
+&gen_runall;
+&gen_restart;
+
+# 4. 提示
+print <<EOF;
+you can now edit:
+kiss/Makefile.PL
+kiss/etc/$prj.conf
+kiss/etc/zeta.conf
+EOF
+
+
+
+sub gen_profile {
+    my $profile =<<EOF;
 export ZETA_HOME=\$HOME/workspace/zeta
 export ${uprj}_HOME=\$HOME/workspace/$prj
 export PERL5LIB=\$ZETA_HOME/lib::\$${uprj}_HOME/lib
@@ -49,10 +70,11 @@ alias cdt='cd \$${uprj}_HOME/t';
 alias cdh='cd \$${uprj}_HOME';
 alias cdtb='cd \$${uprj}_HOME/sql/table';
 EOF
+    &write_file("$prj/etc/profile.mak", $profile);
+}
 
-&write_file("$prj/etc/profile.mak", $profile);
-
-my $zeta =<<EOF;
+sub gen_zeta {
+    my $zeta =<<EOF;
 #!/usr/bin/perl
 use strict;
 use warnings;
@@ -93,11 +115,12 @@ use warnings;
 };
 
 EOF
+    &write_file("$prj/conf/zeta.conf", $zeta);
+}
 
-&write_file("$prj/conf/zeta.conf", $zeta);
 
-
-my $appconf =<<EOF;
+sub gen_appconf {
+    my $appconf =<<EOF;
 #!/usr/bin/perl
 use strict;
 use warnings;
@@ -195,11 +218,11 @@ helper zsetup => sub {
 
 
 EOF
+    &write_file("$prj/conf/$prj.conf", $appconf);
+}
 
-&write_file("$prj/conf/$prj.conf", $appconf);
-
-
-my $plugin =<<EOF;
+sub gen_plugin {
+    my $plugin =<<EOF;
 #!/usr/bin/perl
 use strict;
 use warnings;
@@ -215,10 +238,11 @@ confess "[\$\@]" if \$\@;
 
 1;
 EOF
-&write_file("$prj/libexec/plugin.pl", $plugin);
+    &write_file("$prj/libexec/plugin.pl", $plugin);
+}
 
-
-my $main =<<EOF;
+sub gen_main {
+    my $main =<<EOF;
 #!/usr/bin/perl
 use strict;
 use warnings;
@@ -241,10 +265,11 @@ sub {
 
 __END__
 EOF
+    &write_file("$prj/libexec/main.pl", $main);
+}
 
-&write_file("$prj/libexec/main.pl", $main);
-
-my $gitignore =<<EOF;
+sub gen_gitignore {
+    my $gitignore =<<EOF;
 *.log
 *.swp
 *.tgz
@@ -258,11 +283,12 @@ my $gitignore =<<EOF;
 /tmp
 *.komodoproject
 EOF
+    &write_file("$prj/.gitignore", $gitignore);
+}
 
-&write_file("$prj/.gitignore", $gitignore);
 
-
-my $makefile =<<EOF;
+sub gen_makefile {
+    my $makefile =<<EOF;
 use ExtUtils::MakeMaker;
 
 my \@exec_files;
@@ -298,19 +324,24 @@ WriteMakefile(
 );
 
 EOF
+    &write_file("$prj/Makefile.PL", $makefile);
+}
 
-&write_file("$prj/Makefile.PL", $makefile);
-
-my $stopall =<<EOF;
+sub gen_stopall {
+    my $stopall =<<EOF;
 #!/bin/bash
 
-kill `cat \${$uprj}_HOME/log/zeta.pid`;
-rm -fr \${$uprj}_HOME/log/zeta.pid;
+kill `cat \$${uprj}_HOME/log/zeta.pid`;
+rm -fr \$${uprj}_HOME/log/zeta.pid;
 
 EOF
-&write_file("$prj/sbin/stopall", $stopall);
+    &write_file("$prj/sbin/stopall", $stopall);
+    chmod 0755, "$prj/sbin/stopall";
+}
 
-my $runall =<<EOF;
+
+sub gen_runall {
+    my $runall =<<EOF;
 #!/bin/bash
 
 cd \$${uprj}_HOME/log;
@@ -318,10 +349,13 @@ cd \$${uprj}_HOME/log;
 zeta -f \$${uprj}_HOME/conf/zeta.conf;
 
 EOF
-&write_file("$prj/sbin/runall", $runall);
+    &write_file("$prj/sbin/runall", $runall);
+    chmod 0755, "$prj/sbin/runall";
+}
 
 
-my $restart =<<EOF;
+sub gen_restart {
+    my $restart =<<EOF;
 #!/bin/bash
 
 # 停止应用
@@ -337,18 +371,12 @@ rm -fr *.log;
 zeta -f \$${uprj}_HOME/conf/zeta.conf;
 
 EOF
-&write_file("$prj/sbin/restart", $restart);
+    &write_file("$prj/sbin/restart", $restart);
+    chmod 0755, "$prj/sbin/restart";
+}
 
-chmod 0755, "$prj/sbin/runall", "$prj/sbin/stopall", "$prj/sbin/restart";
 
 
-
-print <<EOF;
-you can now edit:
-kiss/Makefile.PL
-kiss/etc/$prj.conf
-kiss/etc/zeta.conf
-EOF
 
 ##############################################
 ##############################################
