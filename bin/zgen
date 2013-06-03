@@ -7,42 +7,36 @@ use IO::File;
 unless (@ARGV == 2) {
     &usage;
 }
-
 my $prj = $ARGV[1];
 my $uprj = uc $prj;
 
-sub usage {
-    die <<EOF;
-usage: 
-    1. zgen app myapp
-    2. zgen lite_app myapp
-EOF
-}
 
 # 1. 建立目录
 mkpath( [ map { "$prj/$_" } qw/bin sbin conf etc lib libexec log scratch t tmp / ], 0771 );
 
 # 2. 产生skeleton
-&gen_profile;
-&gen_zeta;
-&gen_appconf;
-&gen_plugin;
-&gen_main;
-&gen_gitignore;
-&gen_makefile;
-&gen_stopall;
-&gen_runall;
-&gen_restart;
+&gen_skeleton;
 
-# 4. 提示
+# 3. 提示
 print <<EOF;
 you can now edit:
-kiss/Makefile.PL
-kiss/etc/$prj.conf
-kiss/etc/zeta.conf
+$prj/Makefile.PL
+$prj/etc/$prj.conf
+$prj/etc/zeta.conf
 EOF
 
-
+sub gen_skeleton {
+    &gen_profile;
+    &gen_zeta;
+    &gen_appconf;
+    &gen_plugin;
+    &gen_main;
+    &gen_gitignore;
+    &gen_makefile;
+    &gen_stopall;
+    &gen_runall;
+    &gen_restart;
+}
 
 sub gen_profile {
     my $profile =<<EOF;
@@ -386,4 +380,11 @@ sub write_file {
     IO::File->new("> $fname")->print(+shift);
 }
 
+sub usage {
+    die <<EOF;
+usage: 
+    1. zgen app myapp
+    2. zgen lite_app myapp
+EOF
+}
 
