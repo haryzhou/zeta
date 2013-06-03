@@ -7,7 +7,13 @@ use Carp;
 use POE;
 use Time::HiRes qw/sleep/;
 
+#
+# monq  => 
+# mhost =>
+# mport =>
+#
 sub {
+    my $args = { @_ };
     
     # 获取配置与日志
     my $zcfg = zkernel->zconfig();
@@ -16,6 +22,7 @@ sub {
     
     my $cnt = 0;
     my $msvr;
+
     # 连接监控服务器
     while(1) {
         $msvr = IO::Socket::INET->new(
@@ -42,6 +49,5 @@ sub {
         $mtype = 0;
     }
 };
-
 
 
