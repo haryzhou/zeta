@@ -109,10 +109,11 @@ my $with = delete $kcfg->{with};
 for (keys %$with) {
     my $name = 'Z' . $_;
     $mcfg->{$name} = {
-        code  => "$ENV{ZETA_HOME}/libexec/$_.pl",
-        para  => [ %{$with->{$_}} ],
-        size  => 1,
-        reap  => 1,
+        code   => "$ENV{ZETA_HOME}/libexec/$_.pl",
+        para   => [ %{$with->{$_}} ],
+        size   => 1,
+        reap   => 1,
+        enable => 1,
     },
 }
 

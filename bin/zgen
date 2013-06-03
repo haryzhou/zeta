@@ -26,7 +26,7 @@ mkpath( [ map { "$prj/$_" } qw/bin sbin conf etc lib libexec log scratch t tmp /
 
 my $profile =<<EOF;
 export ZETA_HOME=\$HOME/workspace/zeta
-export ${uprj}_HOME=\$HOME/workspace/zpos
+export ${uprj}_HOME=\$HOME/workspace/$prj
 export PERL5LIB=\$ZETA_HOME/lib::\$${uprj}_HOME/lib
 export PLUGIN_PATH=\$${uprj}_HOME/plugin
 export PATH=\$${uprj}_HOME/bin:\$${uprj}_HOME/sbin:\$ZETA_HOME/bin:\$PATH
@@ -73,35 +73,17 @@ use warnings;
        plugin    => "\$ENV{${uprj}_HOME}/libexec/plugin.pl",
        main      => "\$ENV{${uprj}_HOME}/libexec/main.pl",
        args      => [ qw// ],
+       with      => {
+           stomp => { host => '127.0.0.1', port => 61616, dir => '/tmp' },
+           mlogd => { host => '127.0.0.1', port => 9999,},
+           # magent => { host => '127.0.0.1', port => 7777, monq => '12345'},
+       },
    },
 
    # 模块配置
    module => {
-       #######################
-       # 应用监控 - 节点进程
-       #######################
-       Zmagent => {
-           code      =>  "\$ENV{${uprj}_HOME}/libexec/magent.pl",
-           para      =>  [],
-           reap      =>  1,
-           size      =>  1,
-           enable    =>  0,   #  0 : 不启用，  1： 启用
-       },
-
-       #######################
-       # 日志监控 - HTTPD
-       #######################
-       Zmlogd => {
-           code      =>  "\$ENV{ZETA_HOME}/libexec/mlogd.pl",
-           para      =>  [],
-           reap      =>  1,
-           size      =>  1,
-           enable    =>  0,   #  0 : 不启用，  1： 启用
-       },
-
-       # 消息中间件
-       Zstomp => {
-           code      =>  "\$ENV{ZETA_HOME}/libexec/stomp.pl",
+       Zhello => {
+           code      =>  "\$ENV{ZETA_HOME}/libexec/hello.pl",
            para      =>  [],
            reap      =>  1,
            size      =>  1,
@@ -287,7 +269,7 @@ my \@exec_files;
 push \@exec_files, 'bin/' . \$_ for qw/binary files add here/;
 
 WriteMakefile(
-    NAME      => 'zpos',
+    NAME      => '$prj',
     AUTHOR    => 'haryzhou <zcman2005\@gmail.com>',
     ABSTRACT  => '---------------add here---------------',
     LICENSE   => 'artistic_2',
@@ -331,9 +313,9 @@ EOF
 my $runall =<<EOF;
 #!/bin/bash
 
-cd \${$uprj}_HOME/log;
+cd \$${uprj}_HOME/log;
 
-zeta -f \${$uprj}_HOME/conf/zeta.conf;
+zeta -f \$${uprj}_HOME/conf/zeta.conf;
 
 EOF
 &write_file("$prj/sbin/runall", $runall);
@@ -343,19 +325,22 @@ my $restart =<<EOF;
 #!/bin/bash
 
 # 停止应用
-if [ -f "\${$uprj}_HOME/log/zeta.pid" ]; then 
-    kill `cat \${$uprj}_HOME/log/zeta.pid`;
+if [ -f "\$${uprj}_HOME/log/zeta.pid" ]; then 
+    kill `cat \$${uprj}_HOME/log/zeta.pid`;
 fi
-rm -fr \${$uprj}_HOME/log/zeta.pid;
+rm -fr \$${uprj}_HOME/log/zeta.pid;
 
 # 清理日志
-cd \${$uprj}_HOME/log;
+cd \$${uprj}_HOME/log;
 rm -fr *.log;
 
-zeta -f \${$uprj}_HOME/conf/zeta.conf;
+zeta -f \$${uprj}_HOME/conf/zeta.conf;
 
 EOF
 &write_file("$prj/sbin/restart", $restart);
+
+chmod 0755, "$prj/sbin/runall", "$prj/sbin/stopall", "$prj/sbin/restart";
+
 
 
 print <<EOF;
