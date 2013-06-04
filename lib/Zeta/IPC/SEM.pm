@@ -56,7 +56,7 @@ sub new {
     bless {
         id     => $id,
         lock   => pack( "s!3", 0, -1, SEM_UNDO ),
-        unlock => pack( "s!3", 0, 1, SEM_UNDO ),
+        unlock => pack( "s!3", 0, 1,  SEM_UNDO ),
     }, $class;
 
 }
@@ -67,8 +67,9 @@ sub new {
 sub lock {
     my $self = shift;
 
-  RETRY:
+RETRY:
     unless ( semop( $self->{id}, $self->{lock} ) ) {
+        # 被中断的系统调用
         if ( $!{EINTR} ) {
             goto RETRY;
         }

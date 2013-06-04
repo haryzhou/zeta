@@ -72,12 +72,13 @@ sub send {
         return;
     }
 
-    # warn "begin msgsnd($$self, $msg, $mtype)";
     unless ( msgsnd( $$self, pack( "l! a*", $mtype, $msg ), IPC_NOWAIT ) ) {
+        # 消息队列满了
         if ( $!{EAGAIN} ) {
-            warn "queue $$self is full, message dropped";
+            warn "$$self is full, msg[$!]";
             return;
         }
+        cluck "system error[$!]";
     }
     return $self;
 }
@@ -95,10 +96,11 @@ sub recv {
 
 RETRY:
     unless ( msgrcv( $$self, $$dref, 8192, $$tref, MSG_NOERROR ) ) {
+        # 被中断的系统调用
         if ( $!{EINTR} ) {
             goto RETRY;
         }
-        cluck "msgrcv error";
+        cluck "msgrcv error[$!]";
         return;
     }
     ($mtype , $$dref) = unpack("l!a*", $$dref);
@@ -116,8 +118,7 @@ sub stat {
     my $self = shift;
     my $stat;
     msgctl( $$self, IPC_STAT, $stat );
-    use Data::Dump;
-    Data::Dump->dump($stat);
+    return $stat;
 }
 
 #
@@ -129,9 +130,11 @@ sub recv_nw {
 
     my $mtype = $$tref;
     unless ( msgrcv( $$self, $$dref, 8192, $mtype, MSG_NOERROR | IPC_NOWAIT ) ) {
+        # 非阻塞接收, 没有消息
         if ($!{ENOMSG}) {
             return;
         }
+        # 系统错误
         warn "system error [$!]";
     }
     return $self;

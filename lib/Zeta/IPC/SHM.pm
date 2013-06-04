@@ -106,8 +106,8 @@ __END__
   my $shm2 = Zeta::IPC::SHM->attach(99990000);
 
   my $data;
-  $shm1->write(\("this is a test"));
-  $shm2->read(\$data);
+  $shm1->write(\("this is a test"), 10, 20);  # offset = 10, length = 20
+  $shm2->read(\$data, 10, 20);                # offset = 10, length = 20
   warn "read: [$data]\n";
 
   exit 0;
