@@ -14,10 +14,6 @@ use constant {
 # 插件
 my %plugin;
 
-#
-#  ZETA_DEBUG
-#
-
 # singleton模式对象数据结构
 our $run_kernel = {};
 sub import {
