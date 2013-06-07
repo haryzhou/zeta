@@ -14,18 +14,18 @@ use Zeta::Log;
 #-----------------------------------------------------------------------
 #  dependencies          : logger channel
 #  initialization param  : N/A
-#  description           : ¸ºÔğ½ø³Ì¹ÜÀí
+#  description           : è´Ÿè´£è¿›ç¨‹ç®¡ç†
 #  interface             :
-#   1. process_running   : ÔËĞĞÖĞ½ø³ÌÁĞ±í
-#   2. process_stopped   : ±»Í£Ö¹µÄ½ø³ÌÁĞ±í
-#   2. process_logname   : loggerd½ø³ÌµÄÃû³Æ
-#   3. process_loggerd   : ×¨ÓÃlogger½ø³Ì
-#   3. process_new       : ´´½¨ĞÂµÄ½ø³Ì
-#   4. process_batch     : ÅúÁ¿´´½¨ĞÂ½ø³Ì
-#   5. process_run       : ½ø³ÌÔËĞĞ
-#   6. process_sigchld   : ¸¸½ø³ÌÊÕµ½sigchld
-#   7. process_sigterm   : ¸¸½ø³ÌÊÕµ½sigterm
-#   8  process_submit    : »ú¹¹½ø³ÌÄ£¿é
+#   1. process_running   : è¿è¡Œä¸­è¿›ç¨‹åˆ—è¡¨
+#   2. process_stopped   : è¢«åœæ­¢çš„è¿›ç¨‹åˆ—è¡¨
+#   2. process_logname   : loggerdè¿›ç¨‹çš„åç§°
+#   3. process_loggerd   : ä¸“ç”¨loggerè¿›ç¨‹
+#   3. process_new       : åˆ›å»ºæ–°çš„è¿›ç¨‹
+#   4. process_batch     : æ‰¹é‡åˆ›å»ºæ–°è¿›ç¨‹
+#   5. process_run       : è¿›ç¨‹è¿è¡Œ
+#   6. process_sigchld   : çˆ¶è¿›ç¨‹æ”¶åˆ°sigchld
+#   7. process_sigterm   : çˆ¶è¿›ç¨‹æ”¶åˆ°sigterm
+#   8  process_submit    : æœºæ„è¿›ç¨‹æ¨¡å—
 ########################################################################
 
 my %running;
@@ -137,7 +137,7 @@ helper process_batch => sub  {
 };
 
 #
-# ×Ó½ø³Ì´¦Àí
+# å­è¿›ç¨‹å¤„ç†
 #
 helper process_run => sub {
     
@@ -166,7 +166,7 @@ helper process_run => sub {
     # setup prctl name
     $0 = $name;
 
-    # reader, writerÊÇÁ½¸öÌØÊâµÄ²ÎÊı
+    # reader, writeræ˜¯ä¸¤ä¸ªç‰¹æ®Šçš„å‚æ•°
     if ($reader) {
         close($rw);
         open STDIN, "<&", $reader;    # child read from stdin is read from child
@@ -177,7 +177,7 @@ helper process_run => sub {
     }
 
     #
-    # Íâ²¿¿ÉÖ´ĞĞ´úÂë
+    # å¤–éƒ¨å¯æ‰§è¡Œä»£ç 
     #
     if ( defined $exec && -f $exec ) {
 
@@ -221,7 +221,7 @@ helper process_run => sub {
         exit 0;
     }
 
-    # ÄÚ²¿º¯ÊıÖ¸Õë
+    # å†…éƒ¨å‡½æ•°æŒ‡é’ˆ
     else {
         unless(defined $code) {
             warn "internal error code is not code ref";
@@ -246,13 +246,13 @@ helper process_run => sub {
 
         # child-process plugin load
         my $plugin = $args->{'plugin'};
-        warn "begin init child plugin: \n" . Data::Dump->dump($plugin);
+        # warn "begin init child plugin: \n" . Data::Dump->dump($plugin);
         for ( keys %$plugin) {
             $self->load_plugin($_);
             $self->init_plugin($_, $plugin->{$_});
         } 
 
-        # Ö´ĞĞ
+        # æ‰§è¡Œ
         $code->(@$para);
         exit 0;
 
@@ -282,7 +282,7 @@ helper process_loggerd => sub {
 };
 
 #
-# Æô¶¯ËùÓĞÄ£¿é
+# å¯åŠ¨æ‰€æœ‰æ¨¡å—
 #
 helper process_runall => sub  {
     my ($self, $mlist) = @_;
@@ -314,7 +314,7 @@ helper process_stopall => sub {
 };
 
 #
-# ×Ó½ø³Ì»ØÊÕ²¢ÖØÆô
+# å­è¿›ç¨‹å›æ”¶å¹¶é‡å¯
 #
 helper process_sigchld => sub {
     my $self = shift;
@@ -337,14 +337,14 @@ helper process_sigchld => sub {
             $logger->warn("kid[$pid => $name] reapable[$arg->{'reap'}] died");
 
             ######################################
-            # Ö»ÓĞÕâ¸ö½ø³ÌÊÇreapableµÄ²ÅÄÜÖØÆô
+            # åªæœ‰è¿™ä¸ªè¿›ç¨‹æ˜¯reapableçš„æ‰èƒ½é‡å¯
             ######################################
             if ( $arg->{'reap'} ) {
-                $arg->{restart}++;    # µÇ¼ÇÖØÆô´ÎÊı
+                $arg->{restart}++;    # ç™»è®°é‡å¯æ¬¡æ•°
                 # 
-                # µ±Ç°Ê±¼äºÍÉÏ´ÎÖØÆôÊ±¼äĞ¡ÓÚ1s, ¶øÖØÆô´ÎÊıºÜ¶à
-                # ¶ÌÊ±¼äÄÚ¸ßÖØÆô´ÎÊı£¬ ½«´Ë½ø³Ì·ÅÈëstopped¶ÓÁĞ,È»ºóÆô¶¯¶¨Ê±Æ÷£¬¶¨Ê±ÖØÆôstoppedÖĞµÄÄ£¿é
-                # ÏÂ´Îsigchld½«²»»áÖØÆô´Ë½ø³Ì, 
+                # å½“å‰æ—¶é—´å’Œä¸Šæ¬¡é‡å¯æ—¶é—´å°äº1s, è€Œé‡å¯æ¬¡æ•°å¾ˆå¤š
+                # çŸ­æ—¶é—´å†…é«˜é‡å¯æ¬¡æ•°ï¼Œ å°†æ­¤è¿›ç¨‹æ”¾å…¥stoppedé˜Ÿåˆ—,ç„¶åå¯åŠ¨å®šæ—¶å™¨ï¼Œå®šæ—¶é‡å¯stoppedä¸­çš„æ¨¡å—
+                # ä¸‹æ¬¡sigchldå°†ä¸ä¼šé‡å¯æ­¤è¿›ç¨‹, 
                 # 
                 my $now = time;
                 if ( $now - $arg->{last} < 1 ) {
@@ -373,7 +373,7 @@ helper process_sigchld => sub {
                 $logger->warn("kid $name restarted");
             }
             ################################
-            # ²»¿É»ØÊÕ½ø³Ì£¬ Ö±½ÓÉ¾³ı
+            # ä¸å¯å›æ”¶è¿›ç¨‹ï¼Œ ç›´æ¥åˆ é™¤
             ################################
             else {
                 delete $running{$name};
@@ -398,7 +398,7 @@ helper process_sigterm => sub {
     my $loggerd;
 
     #
-    #  ÏÈ½«logggerd½ø³ÌÕªÏÂ
+    #  å…ˆå°†logggerdè¿›ç¨‹æ‘˜ä¸‹
     if ( $logname and exists $running->{ $logname } ) {
         $loggerd = delete $running->{$logname };
     }
@@ -406,7 +406,7 @@ helper process_sigterm => sub {
 
     my @died;
 
-    # ¸øËùÓĞÔËĞĞÖĞµÄ½ø³Ì·¢ËÍTERMĞÅºÅ
+    # ç»™æ‰€æœ‰è¿è¡Œä¸­çš„è¿›ç¨‹å‘é€TERMä¿¡å·
     for my $name ( keys %$running ) {
         my $pid = $running->{$name}->[0];
         my $arg = $running->{$name}->[1];
@@ -415,7 +415,7 @@ helper process_sigterm => sub {
         push @died, $pid;
     }
 
-    # ¶ÔÓÚËùÓĞ±»·¢ËÍÁËTERMĞÅºÅµÄ½ø³Ì£¬ ¼ì²éÊÇ·ñËÀµô?
+    # å¯¹äºæ‰€æœ‰è¢«å‘é€äº†TERMä¿¡å·çš„è¿›ç¨‹ï¼Œ æ£€æŸ¥æ˜¯å¦æ­»æ‰?
     for (@died) {
         my $rtn = kill( 0, $_ );
         if ( $rtn != 0 ) {
@@ -424,7 +424,7 @@ helper process_sigterm => sub {
         }
     }
 
-    # ±£Ö¤ÈÕÖ¾½ø³ÌloggerdÎª×îºóÒ»¸öÍË³öµÄ×Ó½ø³Ì
+    # ä¿è¯æ—¥å¿—è¿›ç¨‹loggerdä¸ºæœ€åä¸€ä¸ªé€€å‡ºçš„å­è¿›ç¨‹
     if ( defined $loggerd ) {
         my $log_pid = $loggerd->[0];
         $logger->warn("begin kill ZLogger pid[$log_pid]");
@@ -434,16 +434,16 @@ helper process_sigterm => sub {
         $logger->warn("$0: all child died");
     }
 
-    # É¾³ıpidÎÄ¼ş
+    # åˆ é™¤pidæ–‡ä»¶
     unlink $self->daemonize_pidfile if defined $self->daemonize_pidfile and -f $self->daemonize_pidfile;
 
-    # Ö÷½ø³ÌÍË³ö
+    # ä¸»è¿›ç¨‹é€€å‡º
     exit 0;
 
 };
 
 #
-# ¶¨ÆÚ½«stoppedÁĞ±íÖĞ½ø³ÌÆô¶¯
+# å®šæœŸå°†stoppedåˆ—è¡¨ä¸­è¿›ç¨‹å¯åŠ¨
 #
 helper signal_alrm => sub {
     
@@ -464,7 +464,7 @@ helper signal_alrm => sub {
 };
 
 #
-# Ìá½»ÔËĞĞÄ£¿é
+# æäº¤è¿è¡Œæ¨¡å—
 # $self->submit($mname, $args);
 #
 helper process_submit => sub {
@@ -484,12 +484,12 @@ helper process_submit => sub {
         return;
     }
 
-    # set reap flag, Ä¬ÈÏÄ£¿éÊÇ¿É»ØÊÕµÄ
+    # set reap flag, é»˜è®¤æ¨¡å—æ˜¯å¯å›æ”¶çš„
     unless ( exists $args->{'reap'} ) {
         $args->{'reap'} = 1;
     }
 
-    # check module_code: ¼ì²éÄ£¿é²ÎÊı
+    # check module_code: æ£€æŸ¥æ¨¡å—å‚æ•°
     unless ( $self->check_module($args) ) {
         $logger->debug("module[$mname] _check_module failed");
         return;
@@ -514,18 +514,18 @@ warn "-------------------------\n"  and
 warn <<EOF if $ENV{PLUGIN_LOAD_DEBUG};
 #  dependencies          : logger channel
 #  initialization param  : N/A
-#  description           : ¸ºÔğ½ø³Ì¹ÜÀí
+#  description           : è´Ÿè´£è¿›ç¨‹ç®¡ç†
 #  interface             :
-#   1. process_running   : ÔËĞĞÖĞ½ø³ÌÁĞ±í
-#   2. process_stopped   : ±»Í£Ö¹µÄ½ø³ÌÁĞ±í
-#   2. process_logname   : loggerd½ø³ÌµÄÃû³Æ
-#   3. process_loggerd   : ×¨ÓÃlogger½ø³Ì
-#   3. process_new       : ´´½¨ĞÂµÄ½ø³Ì
-#   4. process_batch     : ÅúÁ¿´´½¨ĞÂ½ø³Ì
-#   5. process_run       : ½ø³ÌÔËĞĞ
-#   6. process_sigchld   : ¸¸½ø³ÌÊÕµ½sigchld
-#   7. process_sigterm   : ¸¸½ø³ÌÊÕµ½sigterm
-#   8  process_submit    : »ú¹¹½ø³ÌÄ£¿é
+#   1. process_running   : è¿è¡Œä¸­è¿›ç¨‹åˆ—è¡¨
+#   2. process_stopped   : è¢«åœæ­¢çš„è¿›ç¨‹åˆ—è¡¨
+#   2. process_logname   : loggerdè¿›ç¨‹çš„åç§°
+#   3. process_loggerd   : ä¸“ç”¨loggerè¿›ç¨‹
+#   3. process_new       : åˆ›å»ºæ–°çš„è¿›ç¨‹
+#   4. process_batch     : æ‰¹é‡åˆ›å»ºæ–°è¿›ç¨‹
+#   5. process_run       : è¿›ç¨‹è¿è¡Œ
+#   6. process_sigchld   : çˆ¶è¿›ç¨‹æ”¶åˆ°sigchld
+#   7. process_sigterm   : çˆ¶è¿›ç¨‹æ”¶åˆ°sigterm
+#   8  process_submit    : æœºæ„è¿›ç¨‹æ¨¡å—
 EOF
 
 

@@ -11,17 +11,17 @@ use IO::File;
 #  dependencies          :  
 #  initialization param  : $name,$pidfile
 #  interface             :
-#   1. daemonize_pidfile : »ñÈ¡pidÎÄ¼þÃû³Æ
-#   2. daemonize_name    : »ñÈ¡½ø³Ì×éÃû³Æ
+#   1. daemonize_pidfile : èŽ·å–pidæ–‡ä»¶åç§°
+#   2. daemonize_name    : èŽ·å–è¿›ç¨‹ç»„åç§°
 ########################################################################
-my $mode;    # ÔËÐÐÄ£Ê½
-my $name;    # ½ø³Ì×éÃû³Æ
-my $pidfile; # pidÎÄ¼þ
+my $mode;    # è¿è¡Œæ¨¡å¼
+my $name;    # è¿›ç¨‹ç»„åç§°
+my $pidfile; # pidæ–‡ä»¶
 my $cmdline;
 
 #
-# pidÎÄ¼þ
-# ½ø³ÌÃû³Æ
+# pidæ–‡ä»¶
+# è¿›ç¨‹åç§°
 #
 helper daemonize_pidfile => sub { $pidfile };
 helper daemonize_name    => sub { $name    };
@@ -40,13 +40,13 @@ warn <<EOF if $ENV{PLUGIN_LOAD_DEBUG};
 #  dependencies          :  
 #  initialization param  : $pidfile, $name
 #  interface             :
-#   1. daemonize_pidfile : »ñÈ¡pidÎÄ¼þÃû³Æ
-#   2. daemonize_name    : »ñÈ¡½ø³Ì×éÃû³Æ
+#   1. daemonize_pidfile : èŽ·å–pidæ–‡ä»¶åç§°
+#   2. daemonize_name    : èŽ·å–è¿›ç¨‹ç»„åç§°
 EOF
 
 
 #
-# ²å¼þ³õÊ¼»¯
+# æ’ä»¶åˆå§‹åŒ–
 # $initor->($name, $pidfile)
 #
 sub {

@@ -12,22 +12,22 @@ use Symbol;
 #  dependencies          : N
 #  initialization param  : $chnl_name $chnl_name ....
 #  interface             :
-#   1. channel           : ¹ÜµÀÁÐ±í
-#   2. channel_reader    : »ñÈ¡¹ÜµÀ¶Á¶Ë
-#   3. channel_writer    : »ñÈ¡¹ÜµÀÐ´¶Ë
-#   4. channel_new       : ÐÂ½¨Ò»¸ö¹ÜµÀ
-#   5. channel_add       : Ìí¼ÓÒ»¸öÈ«¾Ö¹ÜµÀ
-#   6. channel_option    : mwriter mreader µÄexec½ø³ÌÐèÒª½âÎö
+#   1. channel           : ç®¡é“åˆ—è¡¨
+#   2. channel_reader    : èŽ·å–ç®¡é“è¯»ç«¯
+#   3. channel_writer    : èŽ·å–ç®¡é“å†™ç«¯
+#   4. channel_new       : æ–°å»ºä¸€ä¸ªç®¡é“
+#   5. channel_add       : æ·»åŠ ä¸€ä¸ªå…¨å±€ç®¡é“
+#   6. channel_option    : mwriter mreader çš„execè¿›ç¨‹éœ€è¦è§£æž
 ########################################################################
 
 my %channel;
 
 
 #
-# »ñÈ¡Í¨µÀµÄ¶Á¶Ë : $self->channel_reader('chnl_a')
-# »ñÈ¡Í¨µÀµÄÐ´¶Ë : $self->channel_reader('chnl_b')
-# ´´½¨Ò»¸öpipe  : $self->channel_new()
-# Ôö¼ÓÈ«¾Ö¹ÜµÀ   : $self->channel_add('chnl_x')
+# èŽ·å–é€šé“çš„è¯»ç«¯ : $self->channel_reader('chnl_a')
+# èŽ·å–é€šé“çš„å†™ç«¯ : $self->channel_reader('chnl_b')
+# åˆ›å»ºä¸€ä¸ªpipe  : $self->channel_new()
+# å¢žåŠ å…¨å±€ç®¡é“   : $self->channel_add('chnl_x')
 #
 #
 helper channel        => sub { \%channel };
@@ -56,7 +56,7 @@ helper channel_add => sub {
 
 
 #
-# mwriter mreader µÄexec½ø³ÌÐèÒª½âÎö
+# mwriter mreader çš„execè¿›ç¨‹éœ€è¦è§£æž
 # $self->channel_option()
 #
 helper channel_option => sub {
@@ -70,8 +70,8 @@ helper channel_option => sub {
       }
       $idx++;
     }
-    %args = @ARGV[$idx .. $#ARGV]; # ÐÂÔöµÄÃüÁîÐÐ²ÎÊý
-    @ARGV = @ARGV[0 .. $idx - 1];  # Ô­À´µÄÃüÁîÐÐ²ÎÊý
+    %args = @ARGV[$idx .. $#ARGV]; # æ–°å¢žçš„å‘½ä»¤è¡Œå‚æ•°
+    @ARGV = @ARGV[0 .. $idx - 1];  # åŽŸæ¥çš„å‘½ä»¤è¡Œå‚æ•°
 
     # Data::Dump->dump(\%args, \@ARGV);
 
@@ -107,17 +107,17 @@ warn <<'EOF' if $ENV{PLUGIN_LOAD_DEBUG};
 #  dependencies          :  
 #  initialization param  : $chnl_name $chnl_name ....
 #  interface             :
-#   1. channel           : ¹ÜµÀÁÐ±í
-#   2. channel_reader    : »ñÈ¡¹ÜµÀ¶Á¶Ë
-#   3. channel_writer    : »ñÈ¡¹ÜµÀÐ´¶Ë
-#   4. channel_new       : ÐÂ½¨Ò»¸ö¹ÜµÀ
-#   5. channel_add       : Ìí¼ÓÒ»¸öÈ«¾Ö¹ÜµÀ
-#   6. channel_option    : mwriter mreader µÄexec½ø³ÌÐèÒª½âÎö
+#   1. channel           : ç®¡é“åˆ—è¡¨
+#   2. channel_reader    : èŽ·å–ç®¡é“è¯»ç«¯
+#   3. channel_writer    : èŽ·å–ç®¡é“å†™ç«¯
+#   4. channel_new       : æ–°å»ºä¸€ä¸ªç®¡é“
+#   5. channel_add       : æ·»åŠ ä¸€ä¸ªå…¨å±€ç®¡é“
+#   6. channel_option    : mwriter mreader çš„execè¿›ç¨‹éœ€è¦è§£æž
 EOF
 
 
 #
-# ³õÊ¼»¯Ê±£¬ ¿ÉÒÔÔ¤ÏÈ´´½¨Ò»Ð©channel
+# åˆå§‹åŒ–æ—¶ï¼Œ å¯ä»¥é¢„å…ˆåˆ›å»ºä¸€äº›channel
 # $initor->('a', 'b' ...)
 #
 sub {

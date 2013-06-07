@@ -8,10 +8,10 @@ use Zeta::Log;
 #                        daemonize.plugin
 #-----------------------------------------------------------------------
 #  dependencies          :  
-#  initialization param  : Zeta::LogµÄ²ÎÊı
+#  initialization param  : Zeta::Logçš„å‚æ•°
 #  interface             :
-#   1. logger            : »ñÈ¡logger¶ÔÏó
-#   2. logger_child      : ×Ó½ø³Ìlogger¸´ÖÆ
+#   1. logger            : è·å–loggerå¯¹è±¡
+#   2. logger_child      : å­è¿›ç¨‹loggerå¤åˆ¶
 ########################################################################
 
 my $logger;
@@ -33,10 +33,10 @@ warn "kernel.plugin loaded:\n"     and
 warn "-------------------------\n"  and
 warn <<EOF if $ENV{PLUGIN_LOAD_DEBUG};
 #  dependencies          :  
-#  initialization param  : Zeta::LogµÄ²ÎÊı
+#  initialization param  : Zeta::Logçš„å‚æ•°
 #  interface             :
-#   1. logger            : »ñÈ¡logger¶ÔÏó
-#   2. logger_child      : ×Ó½ø³Ìlogger¸´ÖÆ
+#   1. logger            : è·å–loggerå¯¹è±¡
+#   2. logger_child      : å­è¿›ç¨‹loggerå¤åˆ¶
 EOF
 
 
