@@ -30,6 +30,11 @@ $prj/conf/$prj.conf
 $prj/conf/zeta.conf
 $prj/libexec/plugin.pl
 $prj/libexec/main.pl
+**************************************
+* 测试运行: 
+* 1、 . $prj/etc/profile.mak
+# 2、 runall
+**************************************
 EOF
 
 sub gen_skeleton {
