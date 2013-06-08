@@ -107,9 +107,9 @@ use warnings;
        main      => "\$ENV{${uprj}_HOME}/libexec/main.pl",
        args      => [ qw// ],
        with      => {
-           stomp => { host => '127.0.0.1', port => 61616, dir => '/tmp' },
-           mlogd => { host => '127.0.0.1', port => 9999,},
-           # magent => { host => '127.0.0.1', port => 7777, monq => '12345'},
+           stomp => { host => '127.0.0.1', port => 61616, dir => '/tmp' },   # 测试stomp服务器
+           mlogd => { host => '127.0.0.1', port => 9999,},                   # 日志监控HTTPD
+           # magent => { host => '127.0.0.1', port => 7777, monq => '12345'}, # 应用监控agent
        },
    },
 
