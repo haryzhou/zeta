@@ -95,43 +95,52 @@ zeta tutorial
 
 1、生成框架
 
-   [gardenia:tmp zhouchao] zgen app kiss
-   mkdir kiss
-   mkdir kiss/bin
-   mkdir kiss/sbin
-   mkdir kiss/conf
-   mkdir kiss/etc
-   mkdir kiss/lib
-   mkdir kiss/libexec
-   mkdir kiss/log
-   mkdir kiss/scratch
-   mkdir kiss/t
-   mkdir kiss/tmp
-   generate kiss/etc/profile.mak
-   generate kiss/conf/zeta.conf
-   generate kiss/conf/kiss.con
-   generate kiss/libexec/plugin.pl
-   generate kiss/libexec/main.pl
-   generate kiss/.gitignore
-   generate kiss/Makefile.PL
-   generate kiss/sbin/stopall
-   generate kiss/sbin/runall
-   generate kiss/sbin/restart
-   
-   you can now edit:
-   kiss/Makefile.PL
-   kiss/etc/kiss.conf
-   kiss/etc/zeta.conf
-   kiss/libexec/plugin.pl
-   kiss/libexec/main.pl
+    [gardenia:tmp zhouchao] zgen app kiss
+    mkdir kiss
+    mkdir kiss/bin
+    mkdir kiss/sbin
+    mkdir kiss/conf
+    mkdir kiss/etc
+    mkdir kiss/lib
+    mkdir kiss/libexec
+    mkdir kiss/log
+    mkdir kiss/scratch
+    mkdir kiss/t
+    mkdir kiss/tmp
+    generate kiss/etc/profile.mak
+    generate kiss/conf/zeta.conf
+    generate kiss/conf/kiss.con
+    generate kiss/libexec/plugin.pl
+    generate kiss/libexec/main.pl
+    generate kiss/.gitignore
+    generate kiss/Makefile.PL
+    generate kiss/sbin/stopall
+    generate kiss/sbin/runall
+    generate kiss/sbin/restart
+    
+    you can now edit:
+    kiss/Makefile.PL
+    kiss/etc/kiss.conf
+    kiss/etc/zeta.conf
+    kiss/libexec/plugin.pl
+    kiss/libexec/main.pl
 
 2、测试运行
 
-   [gardenia:tmp zhouchao] . kiss/etc/profile.mak;   runall
+    [gardenia:tmp zhouchao] . kiss/etc/profile.mak;   runall
 
 3、查看进程
 
-   [gardenia:tmp zhouchao] tail -f kiss/log/Zhello.log
+    [gardenia:tmp zhouchao] ps -ef | grep Z
+    501 51969     1   0  9:46上午 ??         0:00.04 Zkiss   
+    501 51970 51969   0  9:46上午 ??         0:00.00 Zhello   
+    501 51971 51969   0  9:46上午 ??         0:00.11 Zstomp   
+    501 51972 51969   0  9:46上午 ??         0:00.01 Zmlogd   
+    501 51975 51971   0  9:46上午 ??         0:00.01 Zstomp poe-generic read  
+
+3、查看日志
+
+    [gardenia:tmp zhouchao] tail -f kiss/log/Zhello.log
 
 zeta advanced example
 ====
