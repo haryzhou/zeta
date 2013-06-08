@@ -93,11 +93,11 @@ zeta运行原理(todo)
 zeta tutorial
 ====
 
-0、准备工作, 安装zeta框架。 应用程序默认zeta安装在用户home目录下的opt目录下
+1、准备工作, 安装zeta框架。 应用程序默认zeta安装在用户home目录下的opt目录下
 
     [gardenia:tmp zhouchao] cd ~/opt; git clone https://github.com/haryzhou/zeta.git
 
-1、生成框架
+2、生成框架
 
     [gardenia:tmp zhouchao] zgen app kiss
     mkdir kiss
@@ -129,11 +129,11 @@ zeta tutorial
     kiss/libexec/plugin.pl
     kiss/libexec/main.pl
 
-2、测试运行
+3、测试运行
 
     [gardenia:tmp zhouchao] . kiss/etc/profile.mak;   runall
 
-3、查看进程
+4、查看进程
 
     [gardenia:tmp zhouchao] ps -ef | grep Z
     501 51969     1   0  9:46上午 ??         0:00.04 Zkiss   
@@ -148,7 +148,7 @@ zeta tutorial
     * Zstomp   : 一个测试用的stomp服务器， 
     * Zmlogd   : 日志监控HTTPD
 
-4、查看日志
+5、查看日志
 
     [gardenia:tmp zhouchao] ls kiss/log/
     Zhello.log	Zmlogd.log	Zstomp.log	zeta.log	zeta.pid
