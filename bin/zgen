@@ -3,13 +3,15 @@ use strict;
 use warnings;
 use File::Path qw/mkpath/;
 use IO::File;
+use Cwd;
 
 unless (@ARGV == 2) {
     &usage;
 }
+
 my $prj = $ARGV[1];
 my $uprj = uc $prj;
-
+my $cur_dir = cwd;
 
 # 1. 建立目录
 mkpath( [ map { "$prj/$_" } qw/bin sbin conf etc lib libexec log scratch t tmp / ], 0771 );
@@ -19,29 +21,32 @@ mkpath( [ map { "$prj/$_" } qw/bin sbin conf etc lib libexec log scratch t tmp /
 
 # 3. 提示
 print <<EOF;
+
 you can now edit:
 $prj/Makefile.PL
 $prj/etc/$prj.conf
 $prj/etc/zeta.conf
+$prj/libexec/plugin.pl
+$prj/libexec/main.pl
 EOF
 
 sub gen_skeleton {
-    &gen_profile;
-    &gen_zeta;
-    &gen_appconf;
-    &gen_plugin;
-    &gen_main;
-    &gen_gitignore;
-    &gen_makefile;
-    &gen_stopall;
-    &gen_runall;
-    &gen_restart;
+    &gen_profile;   warn "generate $prj/etc/profile.mak\n";
+    &gen_zeta;      warn "generate $prj/conf/zeta.conf\n";
+    &gen_appconf;   warn "generate $prj/conf/$prj.con\n";
+    &gen_plugin;    warn "generate $prj/libexec/plugin.pl\n";
+    &gen_main;      warn "generate $prj/libexec/main.pl\n";
+    &gen_gitignore; warn "generate $prj/.gitignore\n";
+    &gen_makefile;  warn "generate $prj/Makefile.PL\n";
+    &gen_stopall;   warn "generate $prj/sbin/stopall\n";
+    &gen_runall;    warn "generate $prj/sbin/runall\n";
+    &gen_restart;   warn "generate $prj/sbin/restart\n";
 }
 
 sub gen_profile {
     my $profile =<<EOF;
-export ZETA_HOME=\$HOME/workspace/zeta
-export ${uprj}_HOME=\$HOME/workspace/$prj
+export ZETA_HOME=\$HOME/opt/zeta
+export ${uprj}_HOME=$cur_dir/$prj
 export PERL5LIB=\$ZETA_HOME/lib::\$${uprj}_HOME/lib
 export PLUGIN_PATH=\$${uprj}_HOME/plugin
 export PATH=\$${uprj}_HOME/bin:\$${uprj}_HOME/sbin:\$ZETA_HOME/bin:\$PATH
