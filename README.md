@@ -100,6 +100,7 @@ zeta tutorial
 2、生成框架
 
     [gardenia:tmp zhouchao] zgen app kiss
+    建立目录结构...
     mkdir kiss
     mkdir kiss/bin
     mkdir kiss/sbin
@@ -111,6 +112,7 @@ zeta tutorial
     mkdir kiss/scratch
     mkdir kiss/t
     mkdir kiss/tmp
+    生成框架文件...
     generate kiss/etc/profile.mak
     generate kiss/conf/zeta.conf
     generate kiss/conf/kiss.con
@@ -121,13 +123,37 @@ zeta tutorial
     generate kiss/sbin/stopall
     generate kiss/sbin/runall
     generate kiss/sbin/restart
-    
-    you can now edit:
-    kiss/Makefile.PL
-    kiss/etc/kiss.conf
-    kiss/etc/zeta.conf
-    kiss/libexec/plugin.pl
-    kiss/libexec/main.pl
+    **************************************
+    1、定制开发, 请编辑:
+       kiss/Makefile.PL
+       kiss/etc/profile.mak
+       kiss/conf/kiss.conf
+       kiss/conf/zeta.conf
+       kiss/libexec/plugin.pl
+       kiss/libexec/main.pl
+    **************************************
+    2、测试运行: 
+       . kiss/etc/profile.mak
+       runall; ps -ef | grep Z;
+    **************************************
+    3、停止
+       stopall; sleep 1; ps -ef | grep Z;
+    **************************************
+    4、重启 
+       restart; sleep 1; ps -ef | grep Z;
+    **************************************
+    5、查看日志
+       ls -lrt kiss/log/
+       tail -f kiss/log/Zhello.log
+    **************************************
+    6、初始化github项目(请在github创建repository)
+       cd kiss;
+       git init
+       git add .
+       git commit -m "first commit"
+       git remote add origin git@github.com:haryzhou/kiss.git
+       git push -u origin master
+    **************************************
 
 3、测试运行
 
