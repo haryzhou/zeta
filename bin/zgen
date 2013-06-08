@@ -63,16 +63,16 @@ print <<EOF;
 EOF
 
 sub gen_skeleton {
-    &gen_profile;   warn "generate $prj/etc/profile.mak\n";
-    &gen_zeta;      warn "generate $prj/conf/zeta.conf\n";
-    &gen_appconf;   warn "generate $prj/conf/$prj.con\n";
-    &gen_plugin;    warn "generate $prj/libexec/plugin.pl\n";
-    &gen_main;      warn "generate $prj/libexec/main.pl\n";
-    &gen_gitignore; warn "generate $prj/.gitignore\n";
-    &gen_makefile;  warn "generate $prj/Makefile.PL\n";
-    &gen_stopall;   warn "generate $prj/sbin/stopall\n";
-    &gen_runall;    warn "generate $prj/sbin/runall\n";
-    &gen_restart;   warn "generate $prj/sbin/restart\n";
+    &gen_profile;   warn "generate 环境变量: $prj/etc/profile.mak\n";
+    &gen_zeta;      warn "generate 主配置  : $prj/conf/zeta.conf\n";
+    &gen_appconf;   warn "generate 应用配置: $prj/conf/$prj.con\n";
+    &gen_plugin;    warn "generate 插件加载: $prj/libexec/plugin.pl\n";
+    &gen_main;      warn "generate 主控loop: $prj/libexec/main.pl\n";
+    &gen_gitignore; warn "generate git文件 : $prj/.gitignore\n";
+    &gen_makefile;  warn "generate Makefile: $prj/Makefile.PL\n";
+    &gen_stopall;   warn "generate 停止    : $prj/sbin/stopall\n";
+    &gen_runall;    warn "generate 启动    : $prj/sbin/runall\n";
+    &gen_restart;   warn "generate 重启    : $prj/sbin/restart\n";
 }
 
 sub gen_profile {
