@@ -21,11 +21,13 @@ mkpath( [ map { "$prj/$_" } qw/bin sbin conf etc lib libexec log scratch t tmp /
 
 # 3. 提示
 print <<EOF;
-
-you can now edit:
+**************************************
+* 定制开发, 请编辑:
+**************************************
 $prj/Makefile.PL
-$prj/etc/$prj.conf
-$prj/etc/zeta.conf
+$prj/etc/profile.mak
+$prj/conf/$prj.conf
+$prj/conf/zeta.conf
 $prj/libexec/plugin.pl
 $prj/libexec/main.pl
 EOF
