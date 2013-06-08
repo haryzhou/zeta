@@ -95,7 +95,7 @@ zeta tutorial
 
 0、准备工作, 安装zeta框架。 应用程序默认zeta安装在用户home目录下的opt目录下
 
-   [gardenia:tmp zhouchao] cd ~/opt; git clone https://github.com/haryzhou/zeta.git
+    [gardenia:tmp zhouchao] cd ~/opt; git clone https://github.com/haryzhou/zeta.git
 
 1、生成框架
 
