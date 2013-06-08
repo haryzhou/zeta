@@ -22,18 +22,23 @@ mkpath( [ map { "$prj/$_" } qw/bin sbin conf etc lib libexec log scratch t tmp /
 # 3. 提示
 print <<EOF;
 **************************************
-* 定制开发, 请编辑:
-**************************************
-$prj/Makefile.PL
-$prj/etc/profile.mak
-$prj/conf/$prj.conf
-$prj/conf/zeta.conf
-$prj/libexec/plugin.pl
-$prj/libexec/main.pl
-**************************************
-* 测试运行: 
-* 1、 . $prj/etc/profile.mak
-# 2、 runall
+1、定制开发, 请编辑:
+   $prj/Makefile.PL
+   $prj/etc/profile.mak
+   $prj/conf/$prj.conf
+   $prj/conf/zeta.conf
+   $prj/libexec/plugin.pl
+   $prj/libexec/main.pl
+
+2、测试运行: 
+   . $prj/etc/profile.mak
+   runall
+
+3、停止
+   stopall
+
+4、重启 
+   restart
 **************************************
 EOF
 
