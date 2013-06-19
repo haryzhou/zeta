@@ -17,7 +17,6 @@ my $cur_dir = cwd;
 print <<EOF;
 建立目录结构...
 EOF
-
 mkpath( [ map { "$prj/$_" } qw/bin sbin conf etc lib libexec log scratch t tmp / ], 0771 );
 
 # 2. 产生skeleton
@@ -25,7 +24,6 @@ print <<EOF;
 生成框架文件...
 EOF
 &gen_skeleton;
-
 
 # 3. 提示
 print <<EOF;
