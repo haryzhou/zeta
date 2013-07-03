@@ -10,7 +10,7 @@ $m->set_all(
   'to'     => [ 'hongbo.gan@yeepay.com' ],
   'sub'    => 'subject1',
   'body'   => 'body',
-  'attach' => [ './Mailer.t', './Base.t' ],
+  'attach' => [ './Mailer.t' ],
 );
 
 $m->send();

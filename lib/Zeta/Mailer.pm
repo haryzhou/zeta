@@ -195,14 +195,14 @@ sub send {
   }
 
   # 开始发送  
-  warn "[execute mail($self->{from})]";        $smtp->mail($self->{from});
-  warn "[execute to(@{$self->{to}}  ]";        $smtp->to(@{$self->{'to'}});
-  warn "[execute cc  ]";        $smtp->cc(@{$self->{'cc'}}) if defined $self->{'cc'};
-  warn "[execute data  ]";      $smtp->data();
-  warn "[execute datasend  ]";  $smtp->datasend("MIME-Version: 1.0\n");
-  warn "[execute datasend  ]";  $smtp->datasend("Content-type: text/html\n");
-  warn "[execute datasend  ]";  $smtp->datasend($msg->as_string);
-  warn "[execute dataend  ]";   $smtp->dataend();
+  $smtp->mail($self->{from});
+  $smtp->to(@{$self->{'to'}});
+  $smtp->cc(@{$self->{'cc'}}) if defined $self->{'cc'};
+  $smtp->data();
+  $smtp->datasend("MIME-Version: 1.0\n");
+  $smtp->datasend("Content-type: text/html\n");
+  $smtp->datasend($msg->as_string);
+  $smtp->dataend();
 }
 
 sub quit {
