@@ -1,5 +1,11 @@
 #!/usr/bin/perl
 
+#
+# 如果遇到不能auth的情况
+# 需要安装
+#     Authen::SASL
+#
+#
 
 use Zeta::Mailer;
 
