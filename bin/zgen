@@ -38,10 +38,10 @@ print <<EOF;
 **************************************
 2、测试运行: 
    . $prj/etc/profile.mak
-   runall; ps -ef | grep Z;
+   $prj start; ps -ef | grep Z;
 **************************************
 3、停止
-   stopall; sleep 1; ps -ef | grep Z;
+   $prj stop; sleep 1; ps -ef | grep Z;
 **************************************
 4、重启 
    restart; sleep 1; ps -ef | grep Z;
@@ -68,9 +68,7 @@ sub gen_skeleton {
     &gen_main;      warn "generate 主控loop: $prj/libexec/main.pl\n";
     &gen_gitignore; warn "generate git文件 : $prj/.gitignore\n";
     &gen_makefile;  warn "generate Makefile: $prj/Makefile.PL\n";
-    &gen_stopall;   warn "generate 停止    : $prj/sbin/stopall\n";
-    &gen_runall;    warn "generate 启动    : $prj/sbin/runall\n";
-    &gen_restart;   warn "generate 重启    : $prj/sbin/restart\n";
+    &gen_sbin;      warn "generate 启动停止: $prj/sbin/$prj\n";
 }
 
 sub gen_profile {
@@ -356,52 +354,31 @@ EOF
     &write_file("$prj/Makefile.PL", $makefile);
 }
 
-sub gen_stopall {
-    my $stopall =<<EOF;
+sub gen_sbin {
+    my $sbin =<<EOF;
 #!/bin/bash
 
-kill `cat \$${uprj}_HOME/log/zeta.pid`;
-rm -fr \$${uprj}_HOME/log/zeta.pid;
-
-EOF
-    &write_file("$prj/sbin/stopall", $stopall);
-    chmod 0755, "$prj/sbin/stopall";
+usage () {
+    echo "$prj [start|stop]";
+    exit 0;
 }
-
-
-sub gen_runall {
-    my $runall =<<EOF;
-#!/bin/bash
 
 cd \$${uprj}_HOME/log;
 
-zeta -f \$${uprj}_HOME/conf/zeta.conf;
-
-EOF
-    &write_file("$prj/sbin/runall", $runall);
-    chmod 0755, "$prj/sbin/runall";
-}
-
-
-sub gen_restart {
-    my $restart =<<EOF;
-#!/bin/bash
-
-# 停止应用
-if [ -f "\$${uprj}_HOME/log/zeta.pid" ]; then 
-    kill `cat \$${uprj}_HOME/log/zeta.pid`;
+if [[ \$# != 1 ]]; then
+    usage;
 fi
-rm -fr \$${uprj}_HOME/log/zeta.pid;
 
-# 清理日志
-cd \$${uprj}_HOME/log;
-rm -fr *.log;
-
-zeta -f \$${uprj}_HOME/conf/zeta.conf;
-
+if [ "x\$1" = 'xstop' ]; then
+    kill `cat \$${uprj}_HOME/log/zeta.pid`;
+elif [ "x\$1" = 'xstart' ]; then
+    zeta -f \$${uprj}_HOME/conf/zeta.conf;
+else
+    usage;
+fi
 EOF
-    &write_file("$prj/sbin/restart", $restart);
-    chmod 0755, "$prj/sbin/restart";
+    &write_file("$prj/sbin/$prj", $sbin);
+    chmod 0755, "$prj/sbin/$prj";
 }
 
 
