@@ -39,9 +39,9 @@ sub usage {
     usage:
 
     zmail -t tailin.liu@yeepay.com -t ding.luo@yeeay.com \
-           -a ./zmail -a ./zmail \
-           -s subject \
-           -b "hello world"
+          -a ./zmail -a ./zmail \
+          -s subject \
+          -b "hello world"
 EOF
 }
 
