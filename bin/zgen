@@ -79,12 +79,29 @@ export PERL5LIB=\$ZETA_HOME/lib::\$${uprj}_HOME/lib
 export PLUGIN_PATH=\$${uprj}_HOME/plugin
 export PATH=\$${uprj}_HOME/bin:\$${uprj}_HOME/sbin:\$ZETA_HOME/bin:\$PATH
 
+###################################
+# 系统部署参数
+###################################
+# 数据相关
 export DB_NAME=zdb_dev
-export DB_USER=ypinst
-export DB_PASS=ypinst
-export DB_SCHEMA=ypinst
+export DB_USER=db2inst
+export DB_PASS=db2inst
+export DB_SCHEMA=db2inst
 alias dbc='db2 connect to \$DB_NAME user \$DB_USER using \$DB_PASS'
 
+# stomp相关
+export STOMP_IP=127.0.0.1
+export STOMP_PORT=61612
+export STOMP_DATA=/tmp
+
+# mlogd相关
+export MLOGD_IP=127.0.0.1
+export MLOGD_PORT=9999
+export MLOGD_QKEY=9394
+
+###################################
+# 命令别名
+###################################
 alias cdl='cd \$${uprj}_HOME/log';
 alias cdd='cd \$${uprj}_HOME/data';
 alias cdlb='cd \$${uprj}_HOME/lib/$uprj';
@@ -116,15 +133,15 @@ use warnings;
        mode      => 'logger',
        logurl    => "file://\$ENV{${uprj}_HOME}/log/zeta.log",
        loglevel  => 'DEBUG',
-       logmonq   => 9394,    # 日志监控队列
+       logmonq   => \$ENV{MLOGD_QKEY},    # 日志监控队列
        channel   => [],
        name      => 'Z$prj',
        plugin    => "\$ENV{${uprj}_HOME}/libexec/plugin.pl",
        main      => "\$ENV{${uprj}_HOME}/libexec/main.pl",
        args      => [ qw// ],
        with      => {
-           stomp => { host => '127.0.0.1', port => 61616, dir => '/tmp' },   # 测试stomp服务器
-           mlogd => { host => '127.0.0.1', port => 9999,},                   # 日志监控HTTPD
+           stomp => { host => \$ENV{STOMP_IP}, port => \$ENV{STOMP_PORT}, dir => \$ENV{STOMP_DATA} },  # 测试stomp服务器
+           mlogd => { host => \$ENV{MLOGD_IP}, port => \$ENV{MLOGD_PORT},},                   # 日志监控HTTPD
            # magent => { host => '127.0.0.1', port => 7777, monq => '12345'}, # 应用监控agent
        },
    },
