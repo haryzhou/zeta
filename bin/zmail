@@ -1,0 +1,67 @@
+#!/usr/bin/perl
+use strict;
+use warnings;
+use Getopt::Long;
+use Data::Dump;
+
+my @to;
+my @attach;
+my $sub;
+my $body;
+
+my $rtn = GetOptions(
+    "to|t=s"      => \@to,
+    "attach|a=s"  => \@attach,
+    "subject|s=s" => \$sub,
+    "body|b=s"    => \$body,
+);
+unless($rtn) {
+    usage();
+}
+unless(@to) {
+    usage();
+}
+unless($sub && $body) {
+    usage();
+}
+for (@attach) {
+    unless( -f $_) {
+        warn "can file[$_] does not exists";
+        usage();
+    }
+}
+
+# Data::Dump->dump(\@to, \@attach, $sub, $body);
+# exit 0;
+
+sub usage {
+    die <<'EOF';
+    usage:
+
+    zmail -t tailin.liu@yeepay.com -t ding.luo@yeeay.com \
+           -a ./zmail -a ./zmail \
+           -s subject \
+           -b "hello world"
+EOF
+}
+
+#
+# 如果遇到不能auth的情况
+# 需要安装
+#     Authen::SASL
+#
+
+use Zeta::Mailer;
+
+my $m = Zeta::Mailer->new( debug => 0,);
+
+$m->set_all(
+  'from'   => "$ENV{XMAIL_USER}\@yeepay.com",
+  'to'     => [ @to ],
+  'sub'    => $sub,
+  'body'   => $body,
+  'attach' => [ @attach ],
+);
+
+$m->send();
+
