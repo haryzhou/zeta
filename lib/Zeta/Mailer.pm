@@ -161,7 +161,7 @@ sub send {
       To      => $self->{'to'},
       Cc      => $self->{'cc'},
       Subject => $self->{'sub'},
-      Type    => 'TEXT',
+      Type    => 'text/html',
       Data    => $self->{'body'},
     );
   }
@@ -170,7 +170,7 @@ sub send {
       From    => $self->{'from'},
       To      => $self->{'to'},
       Subject => $self->{'sub'},
-      Type    => 'TEXT',
+      Type    => 'text/html',
       Data    => $self->{'body'},
     );
   }
@@ -179,7 +179,6 @@ sub send {
   # 设置附件  
   #
   if( exists $self->{'attach'} ) {
-
     for my $attach (@{$self->{'attach'}}) {
 
       $attach =~ /\/([\w\.]+)$/;
@@ -189,6 +188,7 @@ sub send {
         Type     => 'Text',      # the attachment mime type
         Path     => $attach,     # local address of the attachment
         Filename => $fname,      # the name of attachment in email
+        Disposition => 'attachment',
       );
     }
 
@@ -199,8 +199,6 @@ sub send {
   $smtp->to(@{$self->{'to'}});
   $smtp->cc(@{$self->{'cc'}}) if defined $self->{'cc'};
   $smtp->data();
-  $smtp->datasend("MIME-Version: 1.0\n");
-  $smtp->datasend("Content-type: text/html\n");
   $smtp->datasend($msg->as_string);
   $smtp->dataend();
 }
