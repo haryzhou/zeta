@@ -8,6 +8,7 @@ XMAIL_USER
 XMAIL_PASS
 XMAIL_DEBUG
 /;
+use Encode;
 
 #
 # 'mailhost' => '10.7.1.16';
@@ -161,18 +162,46 @@ sub send {
       To      => $self->{'to'},
       Cc      => $self->{'cc'},
       Subject => $self->{'sub'},
-      Type    => 'text/html',
-      Data    => $self->{'body'},
+      # Type    => 'text/html',
+      # Type     => 'multipart/mixed',
+      Type    => 'multipart/related',
     );
   }
   else {
     $msg = MIME::Lite->new(
-      From    => $self->{'from'},
-      To      => $self->{'to'},
-      Subject => $self->{'sub'},
-      Type    => 'text/html',
-      Data    => $self->{'body'},
+      From     => $self->{'from'},
+      To       => $self->{'to'},
+      Subject  => $self->{'sub'},
+      # Type     => 'text/html',
+      # Type     => 'multipart/mixed',
+      Type     => 'multipart/related',
     );
+  }
+
+  # 签名
+  my $sig_dir = $ENV{XMAIL_SIGNATURE};
+  my $sig_file = (<$sig_dir/*.html>)[0];
+  my @sig_imgs = <$sig_dir/*.jpg>;
+  warn "sig_file[$sig_file] sig_imgs[@sig_imgs]";
+  my $sig_fh =IO::File->new("<$sig_file");
+  my $sig = join '',  <$sig_fh>;
+  $self->{body} .= $sig;
+  $self->{body} = $self->{body};
+
+  # 添加消息体(包括了签名)
+  $msg->attach(
+      Type     => 'text/html',
+      Data     => $self->{'body'},
+  );
+
+  # 签名中的图片
+  for (@sig_imgs) { 
+      /([^\/]+)$/;
+      $msg->attach(
+          Type => 'image/jpg',
+          Id   => $1,
+          Path => $_,
+      );
   }
 
   #
@@ -185,9 +214,10 @@ sub send {
       my $fname = $1;
       warn "begin attach $attach with name $fname..." if $self->{'debug'};
       $msg->attach(
-        Type     => 'Text',      # the attachment mime type
+        # Type     => 'Text',      # the attachment mime type
         Path     => $attach,     # local address of the attachment
         Filename => $fname,      # the name of attachment in email
+        Encoding => 'base64',
         Disposition => 'attachment',
       );
     }
