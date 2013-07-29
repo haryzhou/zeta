@@ -155,46 +155,57 @@ sub send {
   my $smtp = $self->{'smtp'};
   my $msg;
 
-  # 是否有抄送  
-  if( defined $cc) {
-    $msg = MIME::Lite->new(
+  my @args = (
       From    => $self->{'from'},
       To      => $self->{'to'},
-      Cc      => $self->{'cc'},
       Subject => $self->{'sub'},
-      # Type    => 'text/html',
-      # Type     => 'multipart/mixed',
-      Type    => 'multipart/related',
-    );
+  );
+  # 是否有抄送  
+  if( defined $cc) {
+      push @args, Cc =>  $self->{'cc'};
   }
-  else {
-    $msg = MIME::Lite->new(
-      From     => $self->{'from'},
-      To       => $self->{'to'},
-      Subject  => $self->{'sub'},
-      # Type     => 'text/html',
-      # Type     => 'multipart/mixed',
-      Type     => 'multipart/related',
-    );
-  }
+
+  # Type     => 'multipart/mixed',
+  # Type     => 'multipart/related',
 
   # 签名
   my $sig_dir = $ENV{XMAIL_SIGNATURE};
-  my $sig_file = (<$sig_dir/*.html>)[0];
-  my @sig_imgs = <$sig_dir/*.jpg>;
-  warn "sig_file[$sig_file] sig_imgs[@sig_imgs]";
-  my $sig_fh =IO::File->new("<$sig_file");
-  my $sig = join '',  <$sig_fh>;
-  $self->{body} .= $sig;
-  $self->{body} = $self->{body};
+  my $sig;
+  my @sig_imgs;
+  if ( -d $sig_dir ) {
+      my $sig_file = (<$sig_dir/*.html>)[0];
+      @sig_imgs = <$sig_dir/*.jpg>;
+      warn "sig_file[$sig_file] sig_imgs[@sig_imgs]";
 
-  # 添加消息体(包括了签名)
+      # 如果有签名文件, 并且有图片)
+      if ($sig_file ) {
+          if (@sig_imgs) {
+              push @args, Type  => 'multipart/related';
+              my $sig_fh =IO::File->new("<$sig_file");
+              $sig = join '',  <$sig_fh>;
+          }
+          else {
+              push @args, Type  => 'multipart/mixed';
+          }
+      } 
+      else {
+          push @args, Type  => 'multipart/mixed';
+      }
+  }
+  else {
+      push @args, Type  => 'multipart/mixed';
+  }
+  $self->{body} .= $sig if $sig;
+
+  my $msg = MIME::Lite->new(@args);
+
+  # 添加消息体
   $msg->attach(
       Type     => 'text/html',
       Data     => $self->{'body'},
   );
 
-  # 签名中的图片
+  # 签名中的图片-如果有图片的话
   for (@sig_imgs) { 
       /([^\/]+)$/;
       $msg->attach(
@@ -204,9 +215,7 @@ sub send {
       );
   }
 
-  #
   # 设置附件  
-  #
   if( exists $self->{'attach'} ) {
     for my $attach (@{$self->{'attach'}}) {
 

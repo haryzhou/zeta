@@ -5,12 +5,14 @@ use Getopt::Long;
 use Data::Dump;
 
 my @to;
+my @cc;
 my @attach;
 my $sub;
 my $body;
 
 my $rtn = GetOptions(
     "to|t=s"      => \@to,
+    "cc|c=s"      => \@cc,
     "attach|a=s"  => \@attach,
     "subject|s=s" => \$sub,
     "body|b=s"    => \$body,
@@ -58,6 +60,7 @@ my $m = Zeta::Mailer->new( debug => 0,);
 $m->set_all(
   'from'   => "$ENV{XMAIL_USER}\@yeepay.com",
   'to'     => [ @to ],
+  'cc'     => [ @cc ],
   'sub'    => $sub,
   'body'   => $body,
   'attach' => [ @attach ],
