@@ -3,6 +3,8 @@ use strict;
 use warnings;
 use Getopt::Long;
 use Data::Dump;
+use HTML::Escape qw/escape_html/;
+use Zeta::Mailer;
 
 my @to;
 my @cc;
@@ -26,34 +28,18 @@ unless(@to) {
 unless($sub && $body) {
     usage();
 }
+
+if ($body =~ /^-$/) {
+    $body = join "\n", map { chomp; $_ . "</br>" } <>;
+}
+$body = "<div>$body</div>";
+
 for (@attach) {
     unless( -f $_) {
         warn "can file[$_] does not exists";
         usage();
     }
 }
-
-# Data::Dump->dump(\@to, \@attach, $sub, $body);
-# exit 0;
-
-sub usage {
-    die <<'EOF';
-    usage:
-
-    zmail -t tailin.liu@yeepay.com -t ding.luo@yeeay.com \
-          -a ./zmail -a ./zmail \
-          -s subject \
-          -b "hello world"
-EOF
-}
-
-#
-# 如果遇到不能auth的情况
-# 需要安装
-#     Authen::SASL
-#
-
-use Zeta::Mailer;
 
 my $m = Zeta::Mailer->new( debug => 0,);
 
@@ -67,4 +53,34 @@ $m->set_all(
 );
 
 $m->send();
+
+sub usage {
+    die <<'EOF';
+usage:
+
+    # 一般用法
+    zmail -t tailin.liu@yeepay.com -t ding.luo@yeeay.com \
+          -c chao.zhou@yeepay.com \
+          -a ./zmail -a ./zmail \
+          -s subject \
+          -b "hello world"
+
+    #  -b - 代表从标志输入读取, 用于管道处理
+    cat Run.pm | zmail -t tailin.liu@yeepay.com -a ./Run.pm -s subject -b -
+
+参数说明:
+    -t|--to      : 发送给谁, 可以指定多个
+    -c|--cc      : 抄送给谁, 可以指定多个
+    -a|--attach  : 附件, 可以指定多个附件
+    -s|--subject : 邮件标题
+    -b|--body    : 邮件正文内容('-b -'代表从标志输入读)
+
+#
+# 如果遇到不能auth的情况
+# 需要安装
+# sudo cpan -i Authen::SASL
+#
+
+EOF
+}
 
