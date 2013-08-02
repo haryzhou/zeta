@@ -15,5 +15,10 @@ unless($mc->get(qw/T 2/)) { $mc->set(qw/T 2 2/); warn 'T => 2'; }
 unless($mc->get(qw/T 3/)) { $mc->set(qw/T 3 3/); warn 'T => 3'; }
 unless($mc->get(qw/T 4/)) { $mc->set(qw/T 4 4/); warn 'T => 4'; }
 
+warn $mc->get('T', 4);
+warn $mc->get('T', 3);
+warn $mc->get('T', 2);
+warn $mc->get('T', 1);
+
 Data::Dump->dump($mc);
 
