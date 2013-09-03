@@ -3,10 +3,11 @@ use strict;
 use warnings;
 use DateTime;
 use DateTime::Duration;
+use Zeta::IniParse qw/ini_parse/;
 use Carp;
 
 #
-# 参数: $cfg
+# 参数: $dbh
 #
 # 对象结构
 # {
@@ -16,9 +17,9 @@ use Carp;
 # }
 #
 sub new {
-    my ($class, $cfg) = @_;
+    my ($class, $dbh) = @_;
     my $self = bless {}, $class;
-    $self->_init($cfg->{dbh});
+    $self->_init($dbh);
     return $self;
 }
 
