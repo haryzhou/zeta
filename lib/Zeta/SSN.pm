@@ -5,10 +5,22 @@ use warnings;
 sub new {
     my ($class, $dbh, $seq_ctl) = @_;
 
-    my $sth_sel = $dbh->prepare("select cur, min, max  from seq_ctl where key = ? with rs for update");
+    my $sth_sel;
+    if ($ENV{DSN} =~ /SQLite/) {
+        $sth_sel = $dbh->prepare("select cur, min, max  from seq_ctl where key = ?");
+    }
+    else {
+        $sth_sel = $dbh->prepare("select cur, min, max  from seq_ctl where key = ? with rs for update"); 
+    }
     return unless $sth_sel;
     
-    my $sth_upd = $dbh->prepare("update seq_ctl set cur = ?, ts_c = current timestamp where key = ?");
+    my $sth_upd;
+    if ($ENV{DSN} =~ /SQLite/) {
+       $sth_upd  = $dbh->prepare("update seq_ctl set cur = ?, ts_u = current_timestamp where key = ?");
+    }
+    else {
+       $sth_upd  = $dbh->prepare("update seq_ctl set cur = ?, ts_u = current timestamp where key = ?");
+    }
     return unless $sth_upd;
 
     bless {
@@ -25,7 +37,7 @@ sub new {
 sub next {
     my ($self, $key) = @_;
     $self->{sel}->execute($key);
-    my ($id, $max) = $self->{sel}->fetchrow_array();
+    my ($id, $min, $max) = $self->{sel}->fetchrow_array();
 
     my $new;
     if ($id == $max) {
@@ -51,7 +63,7 @@ sub next_n {
 
     my $new = $id + $n;
     if ($new > $max) {
-        $new = ($new - $max) + $min;
+        $new = ($new - $max) + $min - 1;
     }
     
     $self->{upd}->execute($new, $key);
@@ -73,8 +85,8 @@ sub next_cache {
     my $id = $cache->[0];
     $cache->[0]++;   # id   ++
     $cache->[3]--;   # size -- 
-    if ($cache->[0] > $max) {
-        $cache->[0] = $min;
+    if ($cache->[0] > $cache->[2]) {
+        $cache->[0] = $cache->[1];
     }
     return $id;
 }
