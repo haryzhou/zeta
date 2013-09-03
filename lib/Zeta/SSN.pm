@@ -50,13 +50,10 @@ sub next {
     return $id;
 }
 
-#
-# $self->('yspz', 1000)
-# [10, 5, 100000];
-# [$id, $min, $max, $cache];
-#
-sub next_n {
+sub _get_n {
+
     my ($self, $key, $n) = @_;
+
     $self->{sel}->execute($key);
     my ($id, $min, $max) = $self->{sel}->fetchrow_array();
 
@@ -68,27 +65,34 @@ sub next_n {
     
     $self->{upd}->execute($new, $key);
     $self->{dbh}->commit();
-    return [ $id, $min, $max, $n ];
+
+    return [$id, $min, $max, $n];
 }
 
 #
-# $self->next_cache([$id, $min, $max, $n]);
+# $self->('yspz', 1000)
+# [10, 5, 100000];
+# [$id, $min, $max, $cache];
 #
-sub next_cache {
-    my ($self, $cache) = @_;
+sub next_n {
+    my ($self, $key, $n) = @_;
 
-    # cache的序列号用完了
-    if ($cache->[3] == 0 ) {
-        return;
-    }
+    # 返回一个函数
+    my $cache = $self->_get_n($key, $n);
+    return sub {
+        # cache的序列号用完了
+        if ($cache->[3] == 0 ) {
+            $cache = $self->_get_n($key, $n);
+        }
 
-    my $id = $cache->[0];
-    $cache->[0]++;   # id   ++
-    $cache->[3]--;   # size -- 
-    if ($cache->[0] > $cache->[2]) {
-        $cache->[0] = $cache->[1];
-    }
-    return $id;
+        my $id = $cache->[0];
+        $cache->[0]++;   # id   ++
+        $cache->[3]--;   # size -- 
+        if ($cache->[0] > $cache->[2]) {
+            $cache->[0] = $cache->[1];
+        }
+        return $id;
+    };
 }
 
 1;

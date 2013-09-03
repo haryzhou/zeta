@@ -4,6 +4,7 @@
 *.tar
 *.gz
 *.old
+*.db
 t/ext_work/work
 /etc
 gen/*
@@ -12,3 +13,4 @@ gen/*
 /MYMETA.*
 /pm_to_blib
 /tmp
+

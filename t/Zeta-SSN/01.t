@@ -4,7 +4,7 @@ use Test::More;
 use Test::Differences;
 
 $ENV{DSN} = 'SQLite';
-plan tests => 22;
+plan tests => 34;
 my $dbh = DBI->connect(
     "dbi:SQLite:dbname=./seq.db",
     "",
@@ -39,21 +39,36 @@ ok( $zs->next('HUNCK') == 4);
 ok( $zs->next('HUNCK') == 5);
 
 #
-# 12
+#  6 * 4 = 24
 #
-my $cache;
-$cache = $zs->next_n('CACHE', 6); eq_or_diff($cache, [1, 1, 10, 6], 'next_n获取cache');
-$cache = $zs->next_n('CACHE', 6); eq_or_diff($cache, [7, 1, 10, 6], 'next_n获取cache');
-$cache = $zs->next_n('CACHE', 6); eq_or_diff($cache, [3, 1, 10, 6], 'next_n获取cache');
-$cache = $zs->next_n('CACHE', 6); eq_or_diff($cache, [9, 1, 10, 6], 'next_n获取cache');
-ok( $zs->next_cache($cache) == 9);
-ok( $zs->next_cache($cache) == 10);
-ok( $zs->next_cache($cache) == 1);
-ok( $zs->next_cache($cache) == 2);
-ok( $zs->next_cache($cache) == 3);
-ok( $zs->next_cache($cache) == 4);
-ok( $zs->next_cache($cache) == undef);
-$cache = $zs->next_n('CACHE', 6); eq_or_diff($cache, [5, 1, 10, 6], 'next_n获取cache');
+$cache1 = $zs->next_n('CACHE', 6);
+ok( $cache1->() == 1);
+ok( $cache1->() == 2);
+ok( $cache1->() == 3);
+ok( $cache1->() == 4);
+ok( $cache1->() == 5);
+ok( $cache1->() == 6);
+ok( $cache1->() == 7);
+ok( $cache1->() == 8);
+ok( $cache1->() == 9);
+ok( $cache1->() == 10);
+
+ok( $cache1->() == 1);
+ok( $cache1->() == 2);
+ok( $cache1->() == 3);
+ok( $cache1->() == 4);
+ok( $cache1->() == 5);
+ok( $cache1->() == 6);
+ok( $cache1->() == 7);
+ok( $cache1->() == 8);
+ok( $cache1->() == 9);
+ok( $cache1->() == 10);
+
+ok( $cache1->() == 1);
+ok( $cache1->() == 2);
+ok( $cache1->() == 3);
+ok( $cache1->() == 4);
+
 done_testing();
 
 __END__
