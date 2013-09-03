@@ -1,0 +1,28 @@
+#!/usr/bin/perl
+use strict;
+use warnings;
+use DBI;
+use Getopt::Long;
+use Carp;
+
+my $year;
+my $cfg;
+my $rtn = GetOptions(
+    'y|year=i' => \$year,
+    'c|cfg=s'  => \$cfg,
+);
+
+unless($rtn && defined $year && defined $cfg) {
+  die "usage: ./holi_add -y|--year 2012 -c|--cfg 2012.ini";
+}
+
+unless( -f $cfg) {
+  die "$holi_file does not exist";
+}
+
+Zeta::DT->add_holi($dbh, $year, $cfg);
+
+exit 0;
+
+__END__
+
