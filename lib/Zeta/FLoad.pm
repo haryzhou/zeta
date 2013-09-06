@@ -76,7 +76,7 @@ sub flist {
     delete @{$nhash}{@{$self->{execlusive}}} if $exclusive and @$exclusive;
     
     my %rhash = reverse %$nhash;
-    my @fld = @rhash{sort keys %rhash};
+    my @fld = @rhash{sort { $a <=> $b } keys %rhash};
     
     return \@fld;
 }
