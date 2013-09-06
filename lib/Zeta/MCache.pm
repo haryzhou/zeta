@@ -26,7 +26,7 @@ sub new {
 #
 sub size {
     if    (@_ == 3) { shift->{size}{+shift} = shift; }
-    elsif (@_ == 2) { return shift->{size}{+shift}; }
+    elsif (@_ == 2) { return shift->{size}{+shift};  }
 }
 
 # Zeta::MCache->get('type', 'key');

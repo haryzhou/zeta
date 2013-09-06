@@ -1,7 +1,18 @@
 #######################################################################
 #  Zeta::FLoad.pm
 #      从文件读取记录, 处理生成记录， 插入表的基本框架
-#  
+#
+#     xls_row    :  load_xls时的可选钩子
+#     pre        :  load时的行预处理 返回undefined 则不处理次行
+#     rsplit     :  load时行的分割处理， load_xls时为数组引用, 或是返回数组引用的函数
+#     rhandle    :  分割后的字段调整处理
+#     dbh        :  数据库连接
+#     table      :  插入那张表
+#     field      :  哪些字段
+#     exclusive  :  插入除exclusive字段意外的所有其他字段
+#     batch      :  提交批次的大小
+#     logger     :  日志对象
+#
 #  Created by zhou chao on 2013-09-05.
 #  Copyright 2013 zhou chao. All rights reserved.
 #######################################################################
@@ -21,7 +32,7 @@ use Spreadsheet::ParseExcel;
 #
 #    xls_row  => \&xls_row,   # 如果是xls文件, xls获取row的函数, 可选
 #
-#    pre      => \&pre,       # 预处理
+#    pre      => \&pre,       # 预处理, 可选, xls文件不需要此项目
 #    rsplit   => \&rsplit,    # 分割处理
 #    rhandle  => \&rhandle,   # 分割后处理
 #
@@ -34,12 +45,15 @@ sub new {
     my $class = shift;
     my $self = bless { @_ }, $class;
     
-    my $fldstr  = join ', ', @{$self->{field}} if $self->{fleld} and @{$self->{field}};
-    $fldstr   ||= join ', ', @{$self->flist()};
-    return unless $fldstr;
+    my @fld = @{$self->{field}} if $self->{fleld} and @{$self->{field}};
+    unless(@fld) {
+        @fld =  @{$self->flist()};
+    }
+    return unless @fld;
+    my $fldstr = join ', ', @fld;
     
-    my $markstr = join ' ,',  ('?') x @{$self->{field}};
-    my $sql     = "insert into $self->{table} ($fldstr) values($markstr)";
+    my $markstr = join ' ,',  ('?') x @fld;
+    my $sql     = "insert into $self->{table} ($fldstr) values($markstr)"; # warn "[$sql]";
     my $sth     = $self->{dbh}->prepare($sql) or die "can not prepare[$sql]";
     $self->{sth} = $sth;
     
@@ -80,12 +94,16 @@ sub load {
     my $cnt = 0;
     my $ts_beg = [gettimeofday];
     my $elapse;
-    
+   
+    my $pre = $self->{pre}; 
     while(<$fh>) {
-        
-        next unless $_ = $self->{pre}->($_);   # 预处理
-        my @fld = $self->{rsplit}->($_);       # 分割处理
-        my $row = $self->{rhandle}->(\@fld);   # 分割后处理
+       
+        if ($pre) { 
+            next unless $_ = $pre->($_);      # 预处理
+        }
+        my $fld = $self->{rsplit}->($_);      # 分割处理
+        my $row = $self->{rhandle}->($fld);  # 分割后处理
+        # warn "execute[@$row]";
         $self->{sth}->execute(@$row);
         $cnt++;
         if ($cnt == $self->{batch}) {
@@ -118,9 +136,9 @@ sub load_xls {
     my $rmin  = shift;
     
     my $parser = Spreadsheet::ParseExcel->new();
-    my $wb = $parser->parse($file);
-    my $sheet = $wb->worksheet($shidx);
-    my $rmax = ($sheet->row_range())[1];
+    my $wb     = $parser->parse($file);
+    my $sheet  = $wb->worksheet($shidx);
+    my $rmax   = ($sheet->row_range())[1];
     
     my $cidx;
     if ('ARRAY' eq ref $self->{rsplit}) {
@@ -129,13 +147,14 @@ sub load_xls {
     elsif('CODE' eq ref $self->{rsplit}) {
         $cidx = $self->{rsplit}->();
     }
-    
     unless($cidx && 'ARRAY' eq ref $cidx && @$cidx ) {
         die "load_xls need rsplit [] or subroutine return []";
     }
         
     my $xls_row = $self->{xls_row};
-    die "xls_row must be code ref" unless $xls_row and "CODE" eq ref $xls_row;
+    if ($xls_row && "CODE" ne ref $xls_row) {
+        die "xls_row must be code ref";
+    }
     
     $xls_row ||= \&xls_row;
     
@@ -144,8 +163,8 @@ sub load_xls {
     my $batch = 0;
     my $cnt = 0;
     for my $ridx ($rmin .. $rmax) {
-        my @fld = $xls_row->($sheet, $ridx, $cidx);
-        my $row = $self->{rhandle}->(\@fld);
+        my $fld = $xls_row->($sheet, $ridx, $cidx);
+        my $row = $self->{rhandle}->($fld);
         $self->{sth}->execute(@$row);
         $cnt++;
         if ($cnt == $self->{batch}) {
