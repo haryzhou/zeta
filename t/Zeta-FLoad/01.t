@@ -3,7 +3,7 @@ use DBI;
 use Test::More;
 use Test::Differences;
 
-plan tests => 1;
+plan tests => 2;
 
 $ENV{DSN} = 'SQLite';
 my $dbh = DBI->connect(
@@ -34,6 +34,12 @@ Zeta::FLoad->new(
     batch     => 2,
 )->load("./fload.dat");
 
+my $sth = $dbh->prepare("select count(*) from fload");
+$sth->execute();
+my ($cnt) = $sth->fetchrow_array();
+
+ok( $cnt == 8 );
+
 Zeta::FLoad->new(
     dbh       => $dbh,
     table     => 'fload',
@@ -45,7 +51,7 @@ Zeta::FLoad->new(
     batch     => 2,
 )->load_xls("./fload.xls", 0, 0);
 
-my $sth = $dbh->prepare("select count(*) from fload");
+$sth = $dbh->prepare("select count(*) from fload");
 $sth->execute();
 my ($cnt) = $sth->fetchrow_array();
 

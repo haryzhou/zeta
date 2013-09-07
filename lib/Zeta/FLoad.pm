@@ -19,6 +19,7 @@
 package Zeta::FLoad;
 use strict;
 use warnings;
+use utf8;
 use IO::File;
 use Time::HiRes qw/gettimeofday tv_interval/;
 use Spreadsheet::ParseExcel;
@@ -45,6 +46,7 @@ sub new {
     my $class = shift;
     my $self = bless { @_ }, $class;
     
+    # 组织fldstr
     my @fld = @{$self->{field}} if $self->{fleld} and @{$self->{field}};
     unless(@fld) {
         @fld =  @{$self->flist()};
@@ -52,8 +54,8 @@ sub new {
     return unless @fld;
     my $fldstr = join ', ', @fld;
     
-    my $markstr = join ' ,',  ('?') x @fld;
-    my $sql     = "insert into $self->{table} ($fldstr) values($markstr)"; # warn "[$sql]";
+    my $markstr = join ', ',  ('?') x @fld;
+    my $sql     = "insert into $self->{table}($fldstr) values($markstr)";  # warn "[$sql]";
     my $sth     = $self->{dbh}->prepare($sql) or die "can not prepare[$sql]";
     $self->{sth} = $sth;
     
@@ -102,8 +104,10 @@ sub load {
             next unless $_ = $pre->($_);      # 预处理
         }
         my $fld = $self->{rsplit}->($_);      # 分割处理
-        my $row = $self->{rhandle}->($fld);  # 分割后处理
-        # warn "execute[@$row]";
+        my $row = $self->{rhandle}->($fld);   # 分割后处理
+        # warn "execute[@$row]\n";
+        # use Data::Dumper;
+        # print Dumper($self->{sth});
         $self->{sth}->execute(@$row);
         $cnt++;
         if ($cnt == $self->{batch}) {
@@ -116,10 +120,11 @@ sub load {
     }
     
     if ($cnt) {
+        $self->{dbh}->commit();
         $batch++;
-        $cnt = 0;
         $elapse = tv_interval($ts_beg);
         $self->{logger}->info("batch[$batch] cnt[$cnt] elaspe[elapse] last batch!!!") if $self->{logger};
+        $cnt = 0;
     }
  
     return $self;
@@ -165,6 +170,8 @@ sub load_xls {
     for my $ridx ($rmin .. $rmax) {
         my $fld = $xls_row->($sheet, $ridx, $cidx);
         my $row = $self->{rhandle}->($fld);
+        
+        
         $self->{sth}->execute(@$row);
         $cnt++;
         if ($cnt == $self->{batch}) {
