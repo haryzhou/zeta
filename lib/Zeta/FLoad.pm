@@ -19,7 +19,6 @@
 package Zeta::FLoad;
 use strict;
 use warnings;
-use utf8;
 use IO::File;
 use Time::HiRes qw/gettimeofday tv_interval/;
 use Spreadsheet::ParseExcel;

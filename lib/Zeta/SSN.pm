@@ -1,6 +1,7 @@
 package Zeta::SSN;
 use strict;
 use warnings;
+use Carp;
 
 sub new {
     my ($class, $dbh, $seq_ctl) = @_;
@@ -76,6 +77,10 @@ sub _get_n {
 #
 sub next_n {
     my ($self, $key, $n) = @_;
+
+    unless($n) {
+        confess "should be called like \$zs->next_n('mykey', 100)";
+    }
 
     # 返回一个函数
     my $cache = $self->_get_n($key, $n);

@@ -6,7 +6,7 @@ use DateTime::Duration;
 use Zeta::IniParse qw/ini_parse/;
 use Carp;
 
-#
+#--------------------------------------------------
 # 参数: $dbh
 #
 # 对象结构
@@ -15,7 +15,7 @@ use Carp;
 #    2013 => { days => 365, holiday => [] },
 #    2014 => { days => 365, holiday => [] }
 # }
-#
+#--------------------------------------------------
 sub new {
     my ($class, $dbh) = @_;
     my $self = bless {}, $class;
@@ -24,11 +24,40 @@ sub new {
 }
 
 #
+# Zeta::DT->create( 2012 => '2012.ini', 2013 => '2013.ini' ...);
+#
+sub create {
+    my ($class, %files) = @_;
+    my %cfg;
+    for my $year (sort keys %files) {
+        my ($days, $holiday) = &_holi_year($year, $files{$year});
+        $cfg{$year} = { days => $days, holiday => $holiday };
+    }
+    bless \%cfg, $class;
+}
+
+#
 # Zeta::DT->add_holi($dbh, $year, $file);
 #
 sub add_holi {
     my ($class, $dbh, $year, $file) = @_;
     my $sth = $dbh->prepare("insert into dict_holi(year, days, holiday) values(?,?,?)");
+
+    my ($days, $holiday)  = &_holi_year($year, $file);
+    my $holi_str = join ',', @$holiday;
+    $sth->execute($year, $days, $holi_str);
+    $dbh->commit();
+    $sth->finish();
+    return 1;
+}
+
+#
+# &_holi_year($year, $file)
+#
+sub _holi_year {
+ 
+    my ($year, $file) = @_;
+
     my $dt = DateTime->new(
         year      => $year,
         month     => 1,
@@ -54,16 +83,27 @@ sub add_holi {
         $dt->add($dur);
         --$cnt;
     }
-    
+
+    # 解析yyyy.ini    
     my $holi = ini_parse($file);
+
     # 更新国家假日表
     for my $h( keys %$holi) {
         $holi->{$h}->{begin} =~ /(\d{4})(\d{2})(\d{2})/;
-        my $beg = DateTime->new( time_zone => 'local', year => $1, month => $2, day => $3);
+        my $beg = DateTime->new( 
+            time_zone => 'local', 
+            year  => $1, 
+            month => $2, 
+            day   => $3
+        );
         my $d1 = $beg->day_of_year();
 
         $holi->{$h}->{end} =~ /(\d{4})(\d{2})(\d{2})/;
-        my $d2 = DateTime->new( time_zone => 'local', year => $1, month => $2, day => $3)->add($dur)->day_of_year();
+        my $d2 = DateTime->new( 
+            time_zone => 'local', 
+            year => $1, 
+            month => $2, 
+            day => $3)->add($dur)->day_of_year();
         my $all = $d2 - $d1;
 
         while ($all > 0) {
@@ -86,12 +126,10 @@ sub add_holi {
         my $dt = DateTime->new( time_zone => 'local', year => $1, month => $2, day => $3);
         push @holiday, $dt->day_of_year();
     }
-    my $holi_str = join ',', @holiday;
-    $sth->execute($year, $days, $holi_str);
-    $dbh->commit();
-    $sth->finish();
-    return 1;
+
+    return ( $days,  \@holiday );
 }
+
 
 #
 # 初始化对象结构
@@ -153,9 +191,14 @@ sub next_n_wday_dt {
            ++$day;
            if ($day > $self->{$year}->{days}) {
                ++$year;
-               $day = DateTime->new(time_zone => 'local', year => $year, month => 1, day => 1)->day_of_year();
+               $day = DateTime->new(
+                   time_zone => 'local', 
+                   year      => $year, 
+                   month     => 1, 
+                   day       => 1
+               )->day_of_year();
                unless ($self->{$year}) {
-                   confess "ERROR: 无法计算, 只有[" . join(',', sort keys %{$self}) . "], 需要[$year]";
+                   confess "ERROR: only[" . join(',', sort keys %{$self}) . "], need[$year]";
                }
            }
            # 如果是节假日
@@ -174,9 +217,14 @@ sub next_n_wday_dt {
             --$day;
             if ( $day < 0 ) {
                 --$year;
-                $day = DateTime->new(time_zone => 'local', year => $year, month => 12, day => 31)->day_of_year();
+                $day = DateTime->new(
+                    time_zone => 'local', 
+                    year      => $year, 
+                    month     => 12, 
+                    day       => 31
+                )->day_of_year();
                 unless($self->{$year}) {
-                    confess "ERROR: 无法计算, 只有[" . join(',', sort keys %{$self}) . "], 需要[$year]";
+                    confess "only[" . join(',', sort keys %{$self}) . "], need[$year]";
                 }
             }
             if ( $self->{$year}->{holiday}[$day]) {
@@ -217,8 +265,6 @@ sub next_n_day_dt {
                     $dt->subtract(DateTime::Duration->new( days => -$n));
 }
 
-  
-
 #
 # 是否为工作日
 #
@@ -237,7 +283,7 @@ sub is_wday_dt {
     my $year = $dt->year();
     my $day = $dt->day_of_year();
     unless($self->{$year}) {
-        confess "ERROR: 无法计算, 只有[" . join(',', sort keys %{$self}) . "], 需要[$year]";
+        confess "ERROR: only[" . join(',', sort keys %{$self}) . "], need[$year]";
     }
     return $self unless $self->{$year}->{holiday}[$day];
     return; 
