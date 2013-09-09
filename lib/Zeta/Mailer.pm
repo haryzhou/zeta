@@ -203,7 +203,7 @@ sub send {
 
     # 添加消息体
     $msg->attach(
-        Type => 'text/html',
+        Type => 'text/html;charset=UTF-8',
         Data => $self->{'body'},
     );
 

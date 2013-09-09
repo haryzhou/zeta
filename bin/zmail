@@ -30,7 +30,7 @@ unless($sub && $body) {
 }
 
 if ($body =~ /^-$/) {
-    $body = join "\n", map { chomp; $_ . "</br>" } <>;
+    $body = join "\n", map { chomp; $_ . "<br/>" } <>;
 }
 $body = "<div>$body</div>";
 
