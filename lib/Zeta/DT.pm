@@ -27,13 +27,17 @@ sub new {
 # Zeta::DT->create( 2012 => '2012.ini', 2013 => '2013.ini' ...);
 #
 sub create {
+    
     my ($class, %files) = @_;
-    my %cfg;
+    my %info;
     for my $year (sort keys %files) {
         my ($days, $holiday) = &_holi_year($year, $files{$year});
-        $cfg{$year} = { days => $days, holiday => $holiday };
+        my @map;
+        $map[$_] = 1 for @$holiday;
+        $info{$year} = { days => $days, holiday => \@map };
     }
-    bless \%cfg, $class;
+    
+    bless \%info, $class;
 }
 
 #
