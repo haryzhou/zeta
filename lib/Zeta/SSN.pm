@@ -11,7 +11,7 @@ sub new {
         $sth_sel = $dbh->prepare("select cur, min, max  from seq_ctl where key = ?");
     }
     else {
-        $sth_sel = $dbh->prepare("select cur, min, max  from seq_ctl where key = ? with rs for update"); 
+        $sth_sel = $dbh->prepare("select cur, min, max  from seq_ctl where key = ? for update of cur"); 
     }
     return unless $sth_sel;
     
