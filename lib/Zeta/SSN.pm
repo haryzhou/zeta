@@ -57,6 +57,8 @@ sub _get_n {
 
     $self->{sel}->execute($key);
     my ($id, $min, $max) = $self->{sel}->fetchrow_array();
+    $min ||= 1;
+    $max ||= 99999999999999999;
 
 
     my $new = $id + $n;
