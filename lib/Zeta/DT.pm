@@ -238,7 +238,7 @@ sub next_n_wday_dt {
            $n--;
            ++$dur; 
         }
-        return $dt->add(DateTime::Duration->new(days => $dur));
+        return $dt->add(days => $dur);
     }
     else {
         my $dur = 0;
@@ -263,7 +263,7 @@ sub next_n_wday_dt {
             ++$n;
             ++$dur;
         }
-        return $dt->subtract(DateTime::Duration->new(days => $dur));
+        return $dt->subtract(days => $dur);
     }
 }
 
@@ -278,8 +278,8 @@ sub next_n_day {
     $date =~ /(\d{4})-(\d{2})-(\d{2})/;
     my $dt = DateTime->new( time_zone => 'local', year => $1, month => $2, day => $3);
 
-    return $n > 0 ? $dt->add(DateTime::Duration->new( days => $n))->ymd('-') :
-                    $dt->subtract(DateTime::Duration->new( days => -$n))->ymd('-');
+    return $n > 0 ? $dt->add(days => $n)->ymd('-') :
+                    $dt->subtract(days => -$n)->ymd('-');
 }
 
 #
@@ -290,8 +290,8 @@ sub next_n_day_dt {
     my ($self, $dt, $n) = @_;
     return $dt if $n == 0;
   
-    return $n > 0 ? $dt->add(DateTime::Duration->new( days => $n)) :
-                    $dt->subtract(DateTime::Duration->new( days => -$n));
+    return $n > 0 ? $dt->add(days => $n) :
+                    $dt->subtract( days => -$n);
 }
 
 #
@@ -325,7 +325,7 @@ sub week_last {
     my ($self, $date) = @_;
     $date =~ /(\d{4})-(\d{2})-(\d{2})/;
     my $dt = DateTime->new( time_zone => 'local', year => $1, month => $2, day => $3);
-    $dt->add(DateTime::Duration->new( days => 7 - $dt->day_of_week));
+    $dt->add(days => 7 - $dt->day_of_week);
     return $dt->ymd('-');
 }
 
@@ -334,7 +334,7 @@ sub week_last {
 #
 sub week_last_dt {
     my ($self, $dt) = @_;
-    return $dt->add(DateTime::Duration->new( days => 7 - $dt->day_of_week));
+    return $dt->add(days => 7 - $dt->day_of_week);
 }
 
 
