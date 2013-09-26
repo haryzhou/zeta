@@ -5,30 +5,39 @@ use Carp;
 
 sub new {
     my ($class, $dbh, $seq_ctl) = @_;
-
-    my $sth_sel;
-    if ($ENV{DSN} =~ /SQLite/) {
-        $sth_sel = $dbh->prepare("select cur, min, max  from seq_ctl where key = ?");
-    }
-    else {
-        $sth_sel = $dbh->prepare("select cur, min, max  from seq_ctl where key = ? for update of cur"); 
-    }
-    return unless $sth_sel;
-    
-    my $sth_upd;
-    if ($ENV{DSN} =~ /SQLite/) {
-       $sth_upd  = $dbh->prepare("update seq_ctl set cur = ?, ts_u = current_timestamp where key = ?");
-    }
-    else {
-       $sth_upd  = $dbh->prepare("update seq_ctl set cur = ?, ts_u = current timestamp where key = ?");
-    }
-    return unless $sth_upd;
-
-    bless {
+    my $self = bless {
         dbh => $dbh,
-        sel => $sth_sel,
-        upd => $sth_upd,
     }, $class;
+    if ($ENV{DSN} =~/SQLite/) {
+        $self->_sqlite();
+    }
+    elsif($ENV{DSN} =~ /DB2/) {
+        $self->_db2();
+    }
+    else {
+        confess "only support SQLite DB2";
+    }
+    return $self;
+}
+
+sub _sqlite {
+    my $self = shift;
+    my $dbh = $self->{dbh};
+    my $sth_sel = $dbh->prepare("select cur, min, max  from seq_ctl where key = ?");
+    my $sth_upd  = $dbh->prepare("update seq_ctl set cur = ?, ts_u = current_timestamp where key = ?");
+    $self->{sel} = $sth_sel;
+    $self->{upd} = $sth_upd;
+    return $self;
+}
+
+sub _db2 {
+    my $self;
+    my $dbh = $self->{dbh};
+    my $sth_sel = $dbh->prepare("select cur, min, max  from seq_ctl where key = ? for update of cur"); 
+    my $sth_upd  = $dbh->prepare("update seq_ctl set cur = ?, ts_u = current timestamp where key = ?");
+    $self->{sel} = $sth_sel;
+    $self->{upd} = $sth_upd;
+    return $self;
 }
 
 
@@ -41,11 +50,18 @@ sub next {
     my ($id, $min, $max) = $self->{sel}->fetchrow_array();
 
     my $new;
-    if ($id == $max) {
-        $new = $min;
-    } else {
+    if (defined $max && defined $min) {
+        if ($id == $max) {
+            $new = $min;
+        } 
+        else {
+            $new = $id + 1;
+        }
+    }
+    else {
         $new = $id + 1;
     }
+    
     $self->{upd}->execute($new, $key);
     $self->{dbh}->commit();
     return $id;
