@@ -176,9 +176,9 @@ sub load_xls {
         if ($cnt == $self->{batch}) {
             $self->{dbh}->commit();
             $batch++;
-            $cnt = 0;
             $elapse = tv_interval($ts_beg);
             $self->{logger}->info("batch[$batch] cnt[$cnt] elapse[elapse]") if $self->{logger};
+            $cnt = 0;
         }
     }
     
