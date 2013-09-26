@@ -165,6 +165,31 @@ EOF
 }
 
 #
+# 获取工作日期
+#
+sub get_range {
+    my ($self, $y_m_d) = @_;
+
+    # 当前日期必须是工作日
+    unless($self->is_wday($y_m_d)) {
+        return;
+    }
+    my $prev_w = $self->next_n_wday($y_m_d, -1);   # 前一个工作日
+    my $prev   = $self->next_n_day($y_m_d, -1);   # 前一自然日
+    if ($prev_w eq $prev) {
+        return [ $prev ];
+    }
+    my @range;
+    while(1) {
+        push @range, $prev_w;
+        $prev_w = $self->next_n_day($prev_w, 1);
+        last if $prev_w eq $y_m_d;
+    }
+
+    return \@range;
+}
+
+#
 # 下n个工作日
 # 参数:
 #     $date :  日期
