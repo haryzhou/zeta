@@ -11,16 +11,24 @@ my $cfg;   # 配置文件
 my $dsn;   # 数据库配置:
 my $user;
 my $pass;;
+my $schema;
 my $rtn = GetOptions(
-    'y|year=i' => \$year,
-    'c|cfg=s'  => \$cfg,
-    'd|dsn=s'  => \$dsn,
-    'u|user=s' => \$user,
-    'p|pass=s' => \$pass,
+    'y|year=i'   => \$year,
+    'c|cfg=s'    => \$cfg,
+    'd|dsn=s'    => \$dsn,
+    'u|user=s'   => \$user,
+    'p|pass=s'   => \$pass,
+    's|schema=s' => \$schema,
 );
 
 unless($rtn && defined $year && defined $cfg && defined $dsn) {
     &usage();
+}
+
+if ($dsn =~ /DB2/) {
+     unless(defined $schema) {
+          confess "schema needed";
+     }
 }
 
 unless( -f $cfg) {
@@ -39,6 +47,7 @@ my $dbh = DBI->connect( $dsn, $user, $pass, $opts);
 unless($dbh) {
     die "can not connect to db[$dsn] user[$user] pass[$pass]";
 }
+$dbh->do("set current schema $schema");
 
 Zeta::DT->add_holi($dbh, $year, $cfg);
 

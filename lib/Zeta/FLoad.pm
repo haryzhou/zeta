@@ -113,7 +113,7 @@ sub load {
             $self->{dbh}->commit();
             $batch++;
             $elapse = tv_interval($ts_beg);
-            $self->{logger}->info("batch[$batch] cnt[$cnt] elapse[elapse]") if $self->{logger};
+            $self->{logger}->info("batch[$batch] cnt[$cnt] elapse[$elapse]") if $self->{logger};
             $cnt = 0;
         }
     }
@@ -122,7 +122,7 @@ sub load {
         $self->{dbh}->commit();
         $batch++;
         $elapse = tv_interval($ts_beg);
-        $self->{logger}->info("batch[$batch] cnt[$cnt] elaspe[elapse] last batch!!!") if $self->{logger};
+        $self->{logger}->info("batch[$batch] cnt[$cnt] elaspe[$elapse] last batch!!!") if $self->{logger};
         $cnt = 0;
     }
  
@@ -170,21 +170,20 @@ sub load_xls {
         my $fld = $xls_row->($sheet, $ridx, $cidx);
         my $row = $self->{rhandle}->($fld);
         
-        
         $self->{sth}->execute(@$row);
         $cnt++;
         if ($cnt == $self->{batch}) {
             $self->{dbh}->commit();
             $batch++;
             $elapse = tv_interval($ts_beg);
-            $self->{logger}->info("batch[$batch] cnt[$cnt] elapse[elapse]") if $self->{logger};
+            $self->{logger}->info("batch[$batch] cnt[$cnt] elapse[$elapse]") if $self->{logger};
             $cnt = 0;
         }
     }
     
     if ($cnt) {
         $elapse = tv_interval($ts_beg);
-        $self->{logger}->info("batch[$batch] cnt[$cnt] elaspe[elapse] last batch!!!") if $self->{logger};
+        $self->{logger}->info("batch[$batch] cnt[$cnt] elaspe[$elapse] last batch!!!") if $self->{logger};
         $cnt = 0;
     }
  
