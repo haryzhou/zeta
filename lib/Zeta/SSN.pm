@@ -22,7 +22,7 @@ sub new {
 
 sub _sqlite {
     my $self = shift;
-    my $dbh = $self->{dbh};
+    my $dbh  = $self->{dbh};
     my $sth_sel = $dbh->prepare("select cur, min, max  from seq_ctl where key = ?");
     my $sth_upd  = $dbh->prepare("update seq_ctl set cur = ?, ts_u = current_timestamp where key = ?");
     $self->{sel} = $sth_sel;
@@ -31,8 +31,8 @@ sub _sqlite {
 }
 
 sub _db2 {
-    my $self;
-    my $dbh = $self->{dbh};
+    my $self = shift;
+    my $dbh  = $self->{dbh};
     my $sth_sel = $dbh->prepare("select cur, min, max  from seq_ctl where key = ? for update of cur"); 
     my $sth_upd  = $dbh->prepare("update seq_ctl set cur = ?, ts_u = current timestamp where key = ?");
     $self->{sel} = $sth_sel;

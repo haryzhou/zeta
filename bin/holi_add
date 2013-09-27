@@ -35,9 +35,6 @@ my $opts = {
     ChopBlanks       => 1,
     InactiveDestroy  => 1,
 };
-if ($dsn =~ /SQLite/) {
-    $opts->{sqlite_unicode} = 1;
-}
 my $dbh = DBI->connect( $dsn, $user, $pass, $opts);
 unless($dbh) {
     die "can not connect to db[$dsn] user[$user] pass[$pass]";
