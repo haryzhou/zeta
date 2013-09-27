@@ -112,9 +112,9 @@ sub load {
         if ($cnt == $self->{batch}) {
             $self->{dbh}->commit();
             $batch++;
-            $cnt = 0;
             $elapse = tv_interval($ts_beg);
             $self->{logger}->info("batch[$batch] cnt[$cnt] elapse[elapse]") if $self->{logger};
+            $cnt = 0;
         }
     }
     
@@ -183,10 +183,9 @@ sub load_xls {
     }
     
     if ($cnt) {
-        $batch++;
-        $cnt = 0;
         $elapse = tv_interval($ts_beg);
         $self->{logger}->info("batch[$batch] cnt[$cnt] elaspe[elapse] last batch!!!") if $self->{logger};
+        $cnt = 0;
     }
  
     return $self;
