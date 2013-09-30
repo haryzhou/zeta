@@ -19,9 +19,10 @@ use DBI;
 #     tfld_src     char(32)       not null,
 # 
 #     dtable       char(32)       not null,
-#     dfld_src     varchar(2048)  not null,
-#     dfld_src     varchar(2048)  not null,
-#     dfld_src     char(32)       not null,
+#     kfld_dst     varchar(2048)  not null,
+#     vfld_dst     varchar(2048)  not null,
+#     ufld_dst     varchar(2048)  not null,
+#     tfld_dst     char(32)       not null,
 #  
 #     convert      varchar(128), 
 # 
@@ -99,35 +100,37 @@ sub sync {
 
     # 目标数据库
     my $ddb = $self->{dst}{dbh};
-    my ($dtbl, $kfld_dst, $vfld_dst, $tfld_dst) = @{$ctl}{qw/dtable kfld_dst vfld_dst tfld_dst/};
+    my ($dtbl, $kfld_dst, $vfld_dst, $ufld_dst, $tfld_dst) = @{$ctl}{qw/dtable kfld_dst vfld_dst ufld_dst tfld_dst/};
     my @kfld_dst = split ',', $kfld_dst;
     my @vfld_dst = split ',', $vfld_dst;
+    my @ufld_dst = split ',', $ufld_dst;
     my $knum = @kfld_dst;  # 主键字段个数
     my $vnum = @vfld_dst;  # 更新值字段个数
+    my $unum = @ufld_dst;
 
     # 插入目标表语句
     my $ifldstr  = join(', ', @kfld_dst, @vfld_dst, $tfld_dst);
     my $markstr  = join(', ', ('?') x ($knum + $vnum + 1));
-    my $sql_idst = "insert into $dtbl ($ifldstr) values($markstr)"; # warn "$sql_idst";
+    my $sql_idst = "insert into $dtbl ($ifldstr) values($markstr)";  warn "$sql_idst";
     my $idst = $ddb->prepare($sql_idst) or confess "can not prepare[$sql_idst]";
 
     # 更新语句
-    my $setstr  = join(', ', map { "$_ = ?" } (@vfld_dst, $tfld_dst));
-    my $condstr = join(' and ', map { "$_ = ?" } @kfld_dst);
-    my $sql_udst = "update $dtbl set $setstr where $condstr";  # warn "sql_udst";
+    my $setstr   = join(', ', map { "$_ = ?" } (@ufld_dst, $tfld_dst));
+    my $condstr  = join(' and ', map { "$_ = ?" } @kfld_dst);
+    my $sql_udst = "update $dtbl set $setstr where $condstr";   warn "$sql_udst";
     my $udst = $ddb->prepare($sql_udst) or confess "can not prepare[$sql_udst]";
     
     # 转换器, 负责将$slog转换为$dlog
     my $convert;
-    if ($ctl->{convert}) {
-        unless( -f $ctl->{convert}) {
-            confess "convert config[$ctl->{convert}] does not exist";
-        }
-        $convert = do $ctl->{convert};
-        if ($@) {
-            confess "can not do file[$ctl->{convert}] error[$@]";
-        }
+    unless( -f $ctl->{convert}) {
+        confess "convert config[$ctl->{convert}] does not exist";
     }
+    $convert = do $ctl->{convert};
+    if ($@) {
+        confess "can not do file[$ctl->{convert}] error[$@]";
+    }
+    my $uconv = $convert->{update};
+    my $iconv = $convert->{insert};
 
     # 数据库类型
     my $unique;
@@ -162,24 +165,17 @@ sub sync {
         # 开始一轮sync
         $qsrc->execute($beg, $end);
         while(my $slog = $qsrc->fetchrow_arrayref()) {
-            my $dlog;
-            if ($convert) {
-                $dlog = $convert->($self, $slog);
-            }
-            else {
-                $dlog = $slog;
-            }
           
             # 插入目标库表
+            my $dlog = $iconv->($self, $slog);
             eval {
-                $idst->execute(@$dlog); # [k1 .. kN, v1 .. vN, tfld] 
+                $idst->execute(@$dlog);
             };
             if ($@) {
                 # 主键重复
                 if ($@ =~ /$unique/) {
-                    my @dkey = splice(@$dlog, 0, $knum);
-                    # warn "update with[@$dlog, @dkey]";
-                    $udst->execute(@$dlog, @dkey);  # [ v1 .. vN, tfld, k1 .. kN ]
+                    $dlog = $uconv->($self, $slog);
+                    $udst->execute(@$dlog); 
                     $ucnt++;
                 }
                 else {
