@@ -17,6 +17,7 @@
 #  Copyright 2013 zhou chao. All rights reserved.
 #######################################################################
 package Zeta::FLoad;
+use Carp;
 use strict;
 use warnings;
 use IO::File;
@@ -28,7 +29,8 @@ use Spreadsheet::ParseExcel;
 # my $load = ZSTL::Load->new(
 #    dbh      => $dbh, 
 #    table    => 'table_name',
-#    field    => [qw/fld1 fld2 fld3 .../], 
+#    exclude  => [ qw/ts_c oid ts_u/ ],
+#    pkey     => [ qw/fld2 fld4 .../ ],
 #
 #    xls_row  => \&xls_row,   # 如果是xls文件, xls获取row的函数, 可选
 #
@@ -39,47 +41,83 @@ use Spreadsheet::ParseExcel;
 #    batch    => 100,         # 批次大小
 # ) 
 # $load->load($file);
-# $load->load_xls($file, 0, 1);
+# $load->load_xls($file, 0, 0);
 # ===================================================================
 sub new {
     my $class = shift;
     my $self = bless { @_ }, $class;
-    
+
+    my $nhash  = $self->nhash();   # name  => index
+    my %rhash  = reverse %$nhash;  # index => name
+   
+    # 1> 插入语句 
     # 组织fldstr
-    my @fld = @{$self->{field}} if $self->{fleld} and @{$self->{field}};
-    unless(@fld) {
-        @fld =  @{$self->flist()};
-    }
+    my @fld =  @rhash{ sort { $a <=> $b } keys %rhash };
     return unless @fld;
-    my $fldstr = join ', ', @fld;
-    
+    my $fldstr  = join ', ', @fld;
     my $markstr = join ', ',  ('?') x @fld;
-    my $sql     = "insert into $self->{table}($fldstr) values($markstr)";  # warn "[$sql]";
-    my $sth     = $self->{dbh}->prepare($sql) or die "can not prepare[$sql]";
-    $self->{sth} = $sth;
+    my $isql    = "insert into $self->{table}($fldstr) values($markstr)";   # warn "[$isql]";
+    my $isth    = $self->{dbh}->prepare($isql) or die "can not prepare[$isql]";
+
+    # 2> 更新语句 
+    # use Data::Dump;
+    # Data::Dump->dump(\%rhash);
+    # Data::Dump->dump($nhash);
+    # Data::Dump->dump($self); 
+    my @pkey   = @rhash{sort { $a <=> $b } @{$nhash}{@{$self->{pkey}}}};  #  主键列表(按数据库定义顺序)
+    #warn "now pkey[@pkey]";
+    my @fkey;  # 主键域在提供文件中的位置
+    my @fval;  # 更新域在提供文件中的位置
+    my @dfld;  # 更新字段(按数据库定义顺序)
+    delete @{$nhash}{@pkey};
+    %rhash = reverse %$nhash;
+    @dfld = @rhash{ sort { $a <=> $b } keys %rhash };
+    for my $k (@pkey) { 
+        for (my $i = 0; $i < @fld; ++$i) {
+            if ($fld[$i] eq $k) {
+                push @fkey, $i;
+            }
+        }
+    }
     
+    for my $f (@dfld) {
+        for (my $i = 0; $i < @fld; ++$i) {
+            if ($fld[$i] eq $f) {
+                push @fval, $i;
+            }
+        }
+    }
+    my $setstr = join ', ',    map { "$_ = ?" } @dfld;
+    my $keystr = join ' and ', map { "$_ = ?" } @pkey;
+    my $usql = "update $self->{table} set $setstr where $keystr"; # warn "$usql";
+    my $usth = $self->{dbh}->prepare($usql) or die "can not prepare[$usql]";
+
+    # fload对象    
+    $self->{fkey} = \@fkey;
+    $self->{fval} = \@fval;
+    $self->{isth} = $isth;
+    $self->{usth} = $usth;
     $self->{batch} ||= 300;
+
+    # use Data::Dump;
+    # Data::Dump->dump($self);
     
     return $self;
 }
 
 ###########################################################
 #  $self->flist();
-#    获取表的插入字段: 按定义顺序
+#    获取表的插入字段: 按定义顺序, 同时删除exclude的字段
 ###########################################################
-sub flist {
-    my $self = shift;
-    my $table = $self->{table};
-    my $exclusive = $self->{execlusive};
+sub nhash {
+    my $self    = shift;
+    my $table   = $self->{table};
+    my $exclude = delete $self->{exclude};
     
-    my $sth = $self->{dbh}->prepare("select* from $table");
-    my $nhash = $sth->{NAME_lc_hash};
-    delete @{$nhash}{@{$self->{execlusive}}} if $exclusive and @$exclusive;
-    
-    my %rhash = reverse %$nhash;
-    my @fld = @rhash{sort { $a <=> $b } keys %rhash};
-    
-    return \@fld;
+    my $sth   = $self->{dbh}->prepare("select * from $table");
+    my %nhash = %{$sth->{NAME_lc_hash}};
+    delete @nhash{@$exclude} if $exclude and @$exclude;
+    return \%nhash;
 }
 
 ###########################################################
@@ -107,7 +145,20 @@ sub load {
         # warn "execute[@$row]\n";
         # use Data::Dumper;
         # print Dumper($self->{sth});
-        $self->{sth}->execute(@$row);
+        eval {
+            $self->{isth}->execute(@$row);
+        };
+        if ($@) {
+            if ($@ =~ /(0803|not unique)/) {
+                my @pk = @{$row}[@{$self->{fkey}}];
+                $self->{logger}->warn("主键[@pk]重复, 开始更新..."); 
+                $self->{usth}->execute(@{$row}[@{$self->{fval}}], @pk);
+            }
+            else {
+                $self->{logger}->error("system error[$@]");
+                confess($@);
+            }
+        }
         $cnt++;
         if ($cnt == $self->{batch}) {
             $self->{dbh}->commit();
@@ -169,8 +220,22 @@ sub load_xls {
     for my $ridx ($rmin .. $rmax) {
         my $fld = $xls_row->($sheet, $ridx, $cidx);
         my $row = $self->{rhandle}->($fld);
-        
-        $self->{sth}->execute(@$row);
+       
+        # use Data::Dump;
+        # Data::Dump->dump($row); 
+        eval {
+            $self->{isth}->execute(@$row);
+        };
+        if ($@) {
+            if ($@ =~ /(0803|not unique)/) {
+                my @pk = @{$row}[@{$self->{fkey}}];
+                $self->{logger}->warn("主键[@pk]重复, 开始更新..."); 
+                $self->{usth}->execute(@{$row}[@{$self->{fval}}], @pk);
+            }
+            else {
+                confess "system error[$@]";                
+            }
+        }
         $cnt++;
         if ($cnt == $self->{batch}) {
             $self->{dbh}->commit();

@@ -24,44 +24,29 @@ my $dbh = DBI->connect(
 
 $dbh->do("delete from fload");
 $dbh->commit();
-my $logger = Zeta::Log->new(logurl => 'stderr', loglevel => 'ERROR');
+
+my $logger = Zeta::Log->new(logurl => stderr,  loglevel => ERROR);
 Zeta::FLoad->new(
+    logger   => $logger,
     dbh      => $dbh,
     table    => 'fload',
     exclude  => [ qw/memo oid ts_c ts_u/ ],
     pkey     => [ qw/k1 k2/ ],
 
-    pre      => \&fload_pre,
-    rsplit   => \&fload_split,
+    rsplit   => [ 0..5 ],
     rhandle  => \&fload_handle,
     batch    => 2,
-    logger   => $logger,
-)->load("./fload.dat");
+)->load_xls("./fload.xls", 0, 0);
 
-my $sth = $dbh->prepare("select count(*) from fload");
+$sth = $dbh->prepare("select count(*) from fload");
 $sth->execute();
 my ($cnt) = $sth->fetchrow_array();
 
 ok( $cnt == 8 );
 
-done_testing;
-
-
-#################################
-#  detail
-#################################
-sub fload_pre {
-    my $line = shift;
-    $line =~ s/^\s+//g;
-    $line =~ s/\s+$//g;
-    return if $line =~ /^#/;
-    return $line;
-}
-
-sub fload_split {
-    [ split ',', +shift ];
-}
-
+####################################
+# details
+####################################
 sub fload_handle {
-    [ reverse @{+shift} ];
+    [ @{+shift} ];
 }
