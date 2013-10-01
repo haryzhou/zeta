@@ -6,10 +6,11 @@ use Time::HiRes qw/gettimeofday tv_interval/;
 use DBI;
 
 #---------------------------------------------------------
-# 只支持三类同步
-#       DB2    <=> Oracle
-#       DB2    <=> DB2
-#       Oracle <=> Oracle
+# 只支持
+#       sqlite 
+#       mysql
+#       db2
+#       oracle
 #---------------------------------------------------------
 # drop table sync_ctl;
 # create table sync_ctl (
@@ -42,7 +43,7 @@ use DBI;
 #        pass    => 'ypinst', 
 #     },
 #     dst => {
-#        dsn    => 'dbi:DB2:zdb',
+#        dsn    => 'dbi:Oracle:host=foobar;sid=DB;port=1521',
 #        user   => 'ypinst', 
 #        pass   => 'ypinst', 
 #        schema => 'zstl',
@@ -68,6 +69,37 @@ sub new {
     return $self;
 }
 
+#
+# 与数据库类型相关的时间戳获取
+#
+sub timestamp_dbd {
+    my ($self, $ctl) = @_;
+
+    # 更新sync_ctl控制记录
+    my $sql_qts;
+    my $sql_uctl;
+    if ($self->{src}{type} eq 'db2') {
+        $sql_qts  = "values current timestamp - $ctl->{gap} seconds";
+        $sql_uctl = q/update sync_ctl set last = ?, ts_u = current timestamp where stable = ?/;
+    }
+    elsif ($self->{src}{type} eq 'oracle') {
+        $sql_qts = "select current timestamp - $ctl->{gap}/24/60/60 from dual";
+        $sql_uctl = q/update sync_ctl set last = ?, ts_u = current timestamp where stable = ?/;
+    }
+    elsif ($self->{src}{type} eq 'sqlite') {
+        $sql_qts = "select datetime('now', '-$ctl->{gap} second')"; 
+        $sql_uctl = q/update sync_ctl set last = ?, ts_u = current_timestamp where stable = ?/;
+    }
+    elsif ($self->{src}{type} eq 'mysql') {
+    }
+    else {
+        confess "internal error";
+    }
+    my $qts  = $self->{src}{dbh}->prepare($sql_qts)  or confess "can not prepare[$sql_qts]";
+    my $uctl = $self->{src}{dbh}->prepare($sql_uctl) or confess "can not prepare[$sql_uctl]";  
+    return ($qts, $uctl);
+}
+
 
 #----------------------------------------------------------
 # $sync->run($src_table);
@@ -78,7 +110,7 @@ sub sync {
     my $logger = $self->{logger};
 
     # 源数据库   
-    my ($sdb, $uctl, $qts)  = @{$self->{src}}{qw/dbh uctl qts/};
+    my $sdb  = $self->{src}{dbh};
 
     # 查询控制记录
     my $sql_qctl = q/select * from sync_ctl where stable = ?/;
@@ -89,6 +121,7 @@ sub sync {
         confess "can not find sync_ctl with table[$stbl]";
     }
     $qctl->finish();
+    my ($qts, $uctl) = $self->timestamp_dbd($ctl);  # 获取qts uctl
 
     # 查询源表记录语句
     my ($kfld_src, $vfld_src, $tfld_src)  = @{$ctl}{qw/kfld_src vfld_src tfld_src/};
@@ -144,8 +177,9 @@ sub sync {
         confess "internal error";
     }
 
-    # 
-    $qctl = $sdb->prepare(q/select interval, gap, last from sync_ctl where stable = ?/);
+    # 重新设置qctl
+    $sql_qctl = q/select interval, gap, last from sync_ctl where stable = ?/;
+    $qctl = $sdb->prepare($sql_qctl) or confess "can not prepare[$sql_qctl]";
     while(1) {
 
         my $ucnt = 0;
@@ -158,7 +192,7 @@ sub sync {
         $ctl = $qctl->fetchrow_hashref();
 
         # 获取上次开始时间, 到本次结束时间(当前时间的前gap秒)
-        $qts->execute($ctl->{gap});
+        $qts->execute();
         my ($end) = $qts->fetchrow_array();
         my $beg = $ctl->{last};
 
@@ -190,7 +224,6 @@ sub sync {
 
         $uctl->execute($end, $stbl);
         $sdb->commit();  # 更新控制记录表
-        
 
         my $elapse = tv_interval($ts_beg);
         $logger->info(sprintf("update[%04d] insert[%04d] elapse[$elapse]", $ucnt, $icnt));
@@ -216,35 +249,35 @@ sub _init_src {
         confess "can not connect[$src->{dsn}]";
     }
 
-    # 更新sync_ctl控制记录
-    my $sql_uctl = q/update sync_ctl set last = ?, ts_u = current timestamp where stable = ?/;
-    my $uctl = $dbh->prepare($sql_uctl) or confess "can not prepare[$sql_uctl]";  # 更新控制表
     
     my $stype;
-    my $sql_qts;
     # db2
     if ($src->{dsn} =~ /DB2/) {
         $stype = 'db2';
-        $sql_qts  = q/values current timestamp - ? seconds/;
         if ($src->{schema}) {
             $dbh->do("set current schema $src->{schema}");
             $dbh->commit();
         }
     }
     # oracle
-    elsif($src->{dsn} =~ /ORA/) {
+    elsif($src->{dsn} =~ /Oracle/) {
         $stype = 'oracle';
+    }
+    # mysql
+    elsif($src->{dsn} =~ /mysql/) {
+        $stype = 'mysql';
+    }
+    # sqlite
+    elsif($src->{dsn} =~ /SQLite/) {
+        $stype = 'sqlite';
     }
     else {
         confess "不支持的数据库类型";
     }
-    my $qts = $dbh->prepare($sql_qts) or confess "can not prepare[$sql_qts]";  # 当前时间多少秒前
 
     return {
         type => $stype,
         dbh  => $dbh,
-        qts  => $qts,
-        uctl => $uctl, 
     };
 }
 
@@ -278,8 +311,16 @@ sub _init_dst {
        }
     }
     # oracle
-    elsif($dst->{dsn} =~ /ORA/) {
+    elsif($dst->{dsn} =~ /Oracle/) {
        $dtype = 'oracle';
+    }
+    # mysql
+    elsif($dst->{dsn} =~ /mysql/) {
+        $dtype = 'mysql';
+    }
+    # sqlite
+    elsif($dst->{dsn} =~ /SQLite/) {
+        $dtype = 'sqlite';
     }
     # 不支持
     else {
