@@ -2,6 +2,7 @@ package Zeta::Server;
 use strict;
 use warnings;
 use Carp;
+use JSON::XS;
 use Time::HiRes qw/gettimeofday tv_interval/;
 
 ######################################################################
