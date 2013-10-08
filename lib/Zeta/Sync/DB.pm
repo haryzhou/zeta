@@ -133,7 +133,7 @@ sub sync {
 
     # 目标数据库
     my $ddb = $self->{dst}{dbh};
-    my ($dtbl, $kfld_dst, $vfld_dst, $ufld_dst, $tfld_dst) = @{$ctl}{qw/dtable kfld_dst vfld_dst ufld_dst tfld_dst/};
+    my ($dtbl,$kfld_dst,$vfld_dst,$ufld_dst,$tfld_dst) = @{$ctl}{qw/dtable kfld_dst vfld_dst ufld_dst tfld_dst/};
     my @kfld_dst = split ',', $kfld_dst;
     my @vfld_dst = split ',', $vfld_dst;
     my @ufld_dst = split ',', $ufld_dst;
@@ -248,7 +248,6 @@ sub _init_src {
     unless($dbh) {
         confess "can not connect[$src->{dsn}]";
     }
-
     
     my $stype;
     # db2
@@ -335,3 +334,4 @@ sub _init_dst {
 
 
 1;
+
