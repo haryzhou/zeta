@@ -11,8 +11,8 @@
             $slog->[2] . $slog->[3], 
             $slog->[4] 
         ];
-        # use Data::Dump;
-        # Data::Dump->dump($slog, $dlog);
+        use Data::Dump;
+        Data::Dump->dump($slog, $dlog);
         return $dlog;
     },
 

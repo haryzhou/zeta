@@ -15,7 +15,6 @@ use DBI;
 # drop table sync_ctl;
 # create table sync_ctl (
 #     stable       char(32)       not null,
-#     kfld_src     varchar(2048)  not null,
 #     vfld_src     varchar(2048)  not null,
 #     tfld_src     char(32)       not null,
 # 
@@ -74,21 +73,18 @@ sub new {
 #
 sub timestamp_dbd {
     my ($self, $ctl) = @_;
-
+    
     # 更新sync_ctl控制记录
     my $sql_qts;
     my $sql_uctl;
     if ($self->{src}{type} eq 'db2') {
         $sql_qts  = "values current timestamp - $ctl->{gap} seconds";
-        $sql_uctl = q/update sync_ctl set last = ?, ts_u = current timestamp where stable = ?/;
     }
     elsif ($self->{src}{type} eq 'oracle') {
         $sql_qts = "select current timestamp - $ctl->{gap}/24/60/60 from dual";
-        $sql_uctl = q/update sync_ctl set last = ?, ts_u = current timestamp where stable = ?/;
     }
     elsif ($self->{src}{type} eq 'sqlite') {
         $sql_qts = "select datetime('now', '-$ctl->{gap} second')"; 
-        $sql_uctl = q/update sync_ctl set last = ?, ts_u = current_timestamp where stable = ?/;
     }
     elsif ($self->{src}{type} eq 'mysql') {
     }
@@ -96,8 +92,7 @@ sub timestamp_dbd {
         confess "internal error";
     }
     my $qts  = $self->{src}{dbh}->prepare($sql_qts)  or confess "can not prepare[$sql_qts]";
-    my $uctl = $self->{src}{dbh}->prepare($sql_uctl) or confess "can not prepare[$sql_uctl]";  
-    return ($qts, $uctl);
+    return $qts;
 }
 
 
@@ -109,30 +104,33 @@ sub sync {
 
     my $logger = $self->{logger};
 
-    # 源数据库   
+    # 数据库句柄
     my $sdb  = $self->{src}{dbh};
+    my $ddb  = $self->{dst}{dbh};
 
     # 查询控制记录
     my $sql_qctl = q/select * from sync_ctl where stable = ?/;
-    my $qctl = $sdb->prepare($sql_qctl) or confess "can not prepare[$sql_qctl]";  # 查询控制表
+    my $qctl = $ddb->prepare($sql_qctl) or confess "can not prepare[$sql_qctl]";  # 查询控制表
     $qctl->execute($stbl);
     my $ctl = $qctl->fetchrow_hashref();
     unless($ctl) {
         confess "can not find sync_ctl with table[$stbl]";
     }
     $qctl->finish();
-    my ($qts, $uctl) = $self->timestamp_dbd($ctl);  # 获取qts uctl
+    my $sql_uctl = q/update sync_ctl set last = ?, ts_u = current timestamp where stable = ?/;
+    my $uctl = $ddb->prepare($sql_uctl) or confess "can not prepare[$sql_uctl]";
+
+    # src数据库时间戳获取
+    my $qts = $self->timestamp_dbd($ctl);  # 获取qts uctl
 
     # 查询源表记录语句
-    my ($kfld_src, $vfld_src, $tfld_src)  = @{$ctl}{qw/kfld_src vfld_src tfld_src/};
-    my @kfld_src = split ',', $kfld_src;
+    my ($vfld_src, $tfld_src)  = @{$ctl}{qw/vfld_src tfld_src/};
     my @vfld_src = split ',', $vfld_src;
-    my $qfldstr  = join(', ', @kfld_src, @vfld_src, $tfld_src);
-    my $sql_qsrc = "select $qfldstr from $stbl where $tfld_src >= ? and $tfld_src < ?"; # warn $sql_qsrc;
+    my $qfldstr  = join(', ', @vfld_src, $tfld_src);
+    my $sql_qsrc = "select $qfldstr from $stbl where $tfld_src >= ? and $tfld_src < ?";  warn $sql_qsrc;
     my $qsrc = $sdb->prepare($sql_qsrc) or confess "can not prepare[$sql_qsrc]";
 
     # 目标数据库
-    my $ddb = $self->{dst}{dbh};
     my ($dtbl,$kfld_dst,$vfld_dst,$ufld_dst,$tfld_dst) = @{$ctl}{qw/dtable kfld_dst vfld_dst ufld_dst tfld_dst/};
     my @kfld_dst = split ',', $kfld_dst;
     my @vfld_dst = split ',', $vfld_dst;
@@ -179,7 +177,7 @@ sub sync {
 
     # 重新设置qctl
     $sql_qctl = q/select interval, gap, last from sync_ctl where stable = ?/;
-    $qctl = $sdb->prepare($sql_qctl) or confess "can not prepare[$sql_qctl]";
+    $qctl = $ddb->prepare($sql_qctl) or confess "can not prepare[$sql_qctl]";
     while(1) {
 
         my $ucnt = 0;
@@ -220,10 +218,8 @@ sub sync {
                 $icnt++;
             }
         }
-        $ddb->commit();   # 目的数据库提交
-
         $uctl->execute($end, $stbl);
-        $sdb->commit();  # 更新控制记录表
+        $ddb->commit();   # 目的数据库提交
 
         my $elapse = tv_interval($ts_beg);
         $logger->info(sprintf("update[%04d] insert[%04d] elapse[$elapse]", $ucnt, $icnt));

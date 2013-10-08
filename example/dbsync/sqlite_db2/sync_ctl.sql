@@ -1,7 +1,6 @@
 drop table sync_ctl;
 create table sync_ctl (
     stable       char(32)       not null,
-    kfld_src     varchar(128)   not null,
     vfld_src     varchar(2048)  not null,
     tfld_src     char(32)       not null,
 
@@ -13,11 +12,11 @@ create table sync_ctl (
 
     convert      varchar(128),
 
-    interval    int            not null,
-    gap         int            not null,
-    last        timestamp      not null,
+    interval    int          not null,
+    gap         int          not null,
+    last        char(19)     not null,
 
-    ts_c  timestamp  default current_timestamp,
+    ts_c  timestamp  default current timestamp,
     ts_u  timestamp
 );
 create unique index idx_sync_ctl on sync_ctl(stable);
@@ -25,8 +24,7 @@ create unique index idx_sync_ctl on sync_ctl(stable);
 insert into sync_ctl values(
     -- 源数据库表 
     'src_tbl',
-    'k1,k2',
-    'u1,u2', 
+    'k1,k2,u1,u2', 
     'ts_u',
 
     -- 目的数据库表 

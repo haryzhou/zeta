@@ -5,8 +5,9 @@ create table sync_ctl (
     tfld_src     char(32)       not null,
 
     dtable       char(32)       not null,
-    kfld_dst     varchar(2048)  not null,
-    vfld_dst     varchar(2048)  not null,
+    kfld_dst     varchar(128)  not null,
+    vfld_dst     varchar(1024)  not null,
+    ufld_dst     varchar(128),
     tfld_dst     char(32)       not null,
 
     convert      varchar(128),
@@ -27,8 +28,10 @@ insert into sync_ctl values(
     'ts_u',
 
     -- 目的数据库表 
+    -- 
     'dst_tbl',
-    'k12',
+    'k12',  
+    'u1,u2,u12',
     'u12', 
     'ts_u',
 
