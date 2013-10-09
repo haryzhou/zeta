@@ -1,15 +1,16 @@
 drop table sync_ctl;
 create table sync_ctl (
-    stable       char(32)       not null,
-    vfld_src     varchar(2048)  not null,
-    tfld_src     char(32)       not null,
+    stable      char(32)       not null,
+    vfld_src    varchar(2048)  not null,
+    tfld_src    char(32)       not null,
 
-    dtable       char(32)       not null,
-    kfld_dst     varchar(2048)  not null,
-    vfld_dst     varchar(2048)  not null,
-    tfld_dst     char(32)       not null,
+    dtable      char(32)       not null,
+    kfld_dst    varchar(2048)  not null,
+    vfld_dst    varchar(2048)  not null,
+    tfld_dst    char(32)       not null,
 
-    convert      varchar(128),
+    config      varchar(128),
+    convert     varchar(128)   not null,
 
     interval    int            not null,
     gap         int            not null,
