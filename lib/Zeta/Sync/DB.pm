@@ -153,7 +153,13 @@ sub sync {
 
     # 同步配置配置, 负责将$slog转换为$dlog
     my $convert;
-    my $cfg = eval $ctl->{config};
+    my @part = split '/', $ctl->{config};
+    for (@part) {
+        if ($_ =~ s/^\$//) {
+             $_ = $ENV{$_}; 
+        }
+    }
+    my $cfg = join '/', @part;
     unless( -f $cfg) {
         confess "config[$cfg] does not exist";
     }
