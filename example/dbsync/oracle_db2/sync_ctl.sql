@@ -35,8 +35,8 @@ insert into sync_ctl values(
     'u12', 
     'ts_u',
 
-    -- convert
-    '/Users/zhouchao/workspace/zeta/example/dbsync/convert.pl',
+    -- config
+    '/Users/zhouchao/workspace/zeta/example/dbsync/config.pl',
     
     -- interval , gap, last
     3,

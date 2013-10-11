@@ -9,8 +9,7 @@ create table sync_ctl (
     vfld_dst    varchar(2048)  not null,
     tfld_dst    char(32)       not null,
 
-    config      varchar(128),
-    convert     varchar(128)   not null,
+    config      varchar(128)   not null,
 
     interval    int            not null,
     gap         int            not null,

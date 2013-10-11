@@ -25,7 +25,6 @@ use DBI;
 #     tfld_dst     char(32)       not null,
 #  
 #     config       varchar(128)   not null,
-#     convert      varchar(128)   not null, 
 # 
 #     interval     int            not null,
 #     gap          int            not null,
@@ -152,27 +151,19 @@ sub sync {
     my $sql_udst = "update $dtbl set $setstr where $condstr";   warn "$sql_udst";
     my $udst = $ddb->prepare($sql_udst) or confess "can not prepare[$sql_udst]";
 
-    # config, 在转换器中需要
-    my $config;
-    if($ctl->{config} && -f $ctl->{config}) {
-        my $cfgsub = do $ctl->{config};
-        if ($@) {
-            confess "can not do file[$ctl->{config}]";
-        } 
-        $config = &$cfgsub($self);
-    }
-    
-    # 转换器, 负责将$slog转换为$dlog
+    # 同步配置配置, 负责将$slog转换为$dlog
     my $convert;
-    unless( -f $ctl->{convert}) {
-        confess "convert config[$ctl->{convert}] does not exist";
+    my $cfg = eval $ctl->{config};
+    unless( -f $cfg) {
+        confess "config[$cfg] does not exist";
     }
-    $convert = do $ctl->{convert};
+    $convert = do $cfg;
     if ($@) {
-        confess "can not do file[$ctl->{convert}] error[$@]";
+        confess "can not do file[$cfg] error[$@]";
     }
-    my $uconv = $convert->{update};
-    my $iconv = $convert->{insert};
+    my $uconv  = $convert->{update};
+    my $iconv  = $convert->{insert};
+    &{$convert->{initor}}($self);   # initor函数负责组织资源放入$self当中, 给uconv iconf用
 
     # 数据库类型
     my $unique;
