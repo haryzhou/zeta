@@ -45,7 +45,7 @@ sub _db2 {
 # 取下一个
 #
 sub next {
-    my ($self, $key) = @_;
+    my ($self, $key, $commit) = @_;
     $self->{sel}->execute($key);
     my ($id, $min, $max) = $self->{sel}->fetchrow_array();
 
@@ -63,19 +63,20 @@ sub next {
     }
     
     $self->{upd}->execute($new, $key);
-    $self->{dbh}->commit();
+    if ($commit) {
+       $self->{dbh}->commit();
+    }
     return $id;
 }
 
 sub _get_n {
 
-    my ($self, $key, $n) = @_;
+    my ($self, $key, $n, $commit) = @_;
 
     $self->{sel}->execute($key);
     my ($id, $min, $max) = $self->{sel}->fetchrow_array();
     $min ||= 1;
     $max ||= 99999999999999999;
-
 
     my $new = $id + $n;
     if ($new > $max) {
@@ -83,18 +84,21 @@ sub _get_n {
     }
     
     $self->{upd}->execute($new, $key);
-    $self->{dbh}->commit();
+
+    if ($commit) {
+        $self->{dbh}->commit();
+    }
 
     return [$id, $min, $max, $n];
 }
 
 #
-# $self->('yspz', 1000)
+# $self->('yspz', 1000, $commit)
 # [10, 5, 100000];
 # [$id, $min, $max, $cache];
 #
-sub next_n {
-    my ($self, $key, $n) = @_;
+sub next_n_commit {
+    my ($self, $key, $n, $commit) = @_;
 
     unless($n) {
         confess "should be called like \$zs->next_n('mykey', 100)";
@@ -105,7 +109,7 @@ sub next_n {
     return sub {
         # cache的序列号用完了
         if ($cache->[3] == 0 ) {
-            $cache = $self->_get_n($key, $n);
+            $cache = $self->_get_n($key, $n, $commit);
         }
 
         my $id = $cache->[0];
