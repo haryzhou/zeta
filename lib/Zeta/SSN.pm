@@ -97,7 +97,7 @@ sub _get_n {
 # [10, 5, 100000];
 # [$id, $min, $max, $cache];
 #
-sub next_n_commit {
+sub next_n {
     my ($self, $key, $n, $commit) = @_;
 
     unless($n) {
