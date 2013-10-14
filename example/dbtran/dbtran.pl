@@ -28,13 +28,26 @@ my $dbtran = Zeta::DBTran->new(
     dbh    => $dbh,
 );
 
+my $nsql_1 =<<EOF;
+create table tbl_test(
+    a  integer,
+    b  integer,
+    c  integer
+)
+EOF
+
+my $post_1 =<<EOF;
+create index idx_tbl_test on tbl_test(a)
+EOF
+
 $dbtran->tran(
     tbl_test => [
-        "new.sql",
+        [ $nsql_1 ],
         sub {
             my $row = shift;
             my ($a, $b) = @{$row}{qw/a b/};
             return [ $a, $b, $a + $b ];
-        }
+        },
+        [ $post_1 ],
     ]
 );

@@ -38,8 +38,8 @@ sub new {
 #
 # 数据库迁移
 # $self->tran(
-#      tbl_name => [ $new_sql, \&conv ],
-#      tbl_name => [ $new_sql, \&conv ],
+#      tbl_name => [ $nsql, \&conv, $post],
+#      tbl_name => [ $nsql, \&conv, $post],
 # )
 #
 sub tran {
@@ -50,9 +50,10 @@ sub tran {
     my $fail = 0;
     my $success = 0;
     for my $tbl (keys %$job) {
-        my $conv = $job->{$tbl}->[1];
         my $nsql = $job->{$tbl}->[0];
-        unless( $self->table($tbl, $nsql, $conv) ) {
+        my $conv = $job->{$tbl}->[1];
+        my $post = $job->{$tbl}->[2];
+        unless( $self->table($tbl, $nsql, $conv, $post) ) {
             $logger->info("移表[$tbl] 失败!!!!");
             ++$fail;
         } 
@@ -69,7 +70,7 @@ sub tran {
 # 表迁移
 #
 sub table {
-    my ($self, $tbl, $nsql, $conv) = @_;
+    my ($self, $tbl, $nsql, $conv, $post) = @_;
     my $dbh = $self->{dbh};
     my $logger = $self->{logger};
     
@@ -78,17 +79,9 @@ sub table {
     $self->rename($tbl, $old);
         
     # 建立新表
-    my $content;
-    { 
-        local *FILE; open FILE, "<$nsql"; 
-        while(<FILE>) {
-            next if /^drop table/;
-            $content .= $_;
-        }
-        close FILE;
+    for (@$nsql) {
+        $dbh->do($_);
     }
-    $logger->debug("\n$content\n");
-    $dbh->do($content);
     $dbh->commit();
     
     # 准备新表插入语句
@@ -131,6 +124,12 @@ sub table {
     
     $dbh->do("drop table $old");
     $dbh->commit();
+
+    # 数据升级后处理
+    for (@$post) {
+        $dbh->do($_);
+    }
+
     return $self;
 }
 

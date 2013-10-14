@@ -5,12 +5,12 @@ use Carp;
 use Time::HiRes qw/gettimeofday tv_interval/;
 use DBI;
 
-#---------------------------------------------------------
+#-------------------------------------------------------------
 # 只支持
-#       sqlite 
-#       mysql
-#       db2
-#       oracle
+#       sqlite  : YYYY-MM-DD HH:MM:SS         current_timestamp
+#       mysql   : YYYY-MM-DD HH:MM:SS         current_timestamp
+#       db2     : YYYY-MM-DD HH:MM:SS.xxxxxx  current timestamp
+#       oracle  : YYYYMMDDHHMMDDSS            to_char(sysdate-10/3600/24, 'YYYYMMDDHH24MISS')
 #---------------------------------------------------------
 # drop table sync_ctl;
 # create table sync_ctl (
@@ -80,8 +80,9 @@ sub timestamp_dbd {
     if ($self->{src}{type} eq 'db2') {
         $sql_qts  = "values current timestamp - $ctl->{gap} seconds";
     }
-    elsif ($self->{src}{type} eq 'oracle') {
-        $sql_qts = "select current timestamp - $ctl->{gap}/24/60/60 from dual";
+    elsif($self->{src}{type} eq 'oracle') {
+        $sql_qts = "select to_char(sysdate-$ctl->{gap}/3600/24, 'YYYYMMDDHH24MISS') from dual";
+        # $sql_qts = "select current timestamp - $ctl->{gap}/24/60/60 from dual";
     }
     elsif ($self->{src}{type} eq 'sqlite') {
         $sql_qts = "select datetime('now', '-$ctl->{gap} second')"; 

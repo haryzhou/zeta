@@ -5,6 +5,7 @@
 *.gz
 *.old
 *.db
+*.db-journal
 t/ext_work/work
 /etc
 gen/*
