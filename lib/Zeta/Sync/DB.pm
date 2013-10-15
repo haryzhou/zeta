@@ -237,7 +237,7 @@ sub sync {
         $ddb->commit();   # 目的数据库提交
 
         my $elapse = tv_interval($ts_beg);
-        $logger->info(sprintf("update[%04d] insert[%04d] elapse[$elapse]", $ucnt, $icnt));
+        $logger->info(sprintf("[$beg, $end): U[%04d] I[%04d] E[$elapse]", $ucnt, $icnt));
         sleep $ctl->{interval};
     }
 }
