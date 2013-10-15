@@ -130,9 +130,8 @@ sub sync {
     my @qfld_src = (@vfld_src, $tfld_src);
     my $qfldstr  = join(', ', @qfld_src);
     my $sql_qsrc = "select $qfldstr from $stbl where $tfld_src >= ? and $tfld_src < ?";  
-    warn $sql_qsrc;
-
     my $qsrc = $sdb->prepare($sql_qsrc) or confess "can not prepare[$sql_qsrc]";
+    $logger->debug($sql_qsrc);
 
     # 目标数据库
     my ($dtbl,$kfld_dst,$vfld_dst,$ufld_dst,$tfld_dst) = @{$ctl}{qw/dtable kfld_dst vfld_dst ufld_dst tfld_dst/};
@@ -147,8 +146,9 @@ sub sync {
     my @ifld_dst = (@kfld_dst, @vfld_dst, $tfld_dst);
     my $ifldstr  = join(', ', @ifld_dst);
     my $markstr  = join(', ', ('?') x ($knum + $vnum + 1));
-    my $sql_idst = "insert into $dtbl ($ifldstr) values($markstr)";  warn "$sql_idst";
+    my $sql_idst = "insert into $dtbl ($ifldstr) values($markstr)";  
     my $idst = $ddb->prepare($sql_idst) or confess "can not prepare[$sql_idst]";
+    $logger->debug($sql_idst);
 
     # 更新语句
     my $setstr   = join(', ', map { "$_ = ?" } (@ufld_dst, $tfld_dst));
@@ -156,6 +156,7 @@ sub sync {
     my $sql_udst = "update $dtbl set $setstr where $condstr";   warn "$sql_udst";
     my $udst     = $ddb->prepare($sql_udst) or confess "can not prepare[$sql_udst]";
     my @updf_dst = (@ufld_dst, $tfld_dst, @kfld_dst);
+    $logger->debug($sql_udst);
 
     # 同步配置配置, 负责将$slog转换为$dlog
     my $convert;
@@ -189,8 +190,8 @@ sub sync {
         confess "internal error";
     }
 
-    warn "ifld_dst[@ifld_dst]"; 
-    warn "updf_dst[@updf_dst]";
+    $logger->debug("ifld_dst[@ifld_dst]");
+    $logger->debug("updf_dst[@updf_dst]");
 
     # 重新设置qctl
     $sql_qctl = q/select interval, gap, last from sync_ctl where stable = ?/;
@@ -211,7 +212,7 @@ sub sync {
         my $beg = $ctl->{last};
 
         # 开始一轮sync
-        warn "execute $sql_qsrc with[$beg, $end)";
+        # warn "execute $sql_qsrc with[$beg, $end)";
         $qsrc->execute($beg, $end);
         while(my $slog = $qsrc->fetchrow_hashref()) {
             
