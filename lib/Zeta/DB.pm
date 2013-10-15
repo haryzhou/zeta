@@ -5,13 +5,13 @@ use Carp;
 use Time::HiRes qw/gettimeofday tv_interval/;
 use DBI;
 
-#-------------------------------------------------------------
+#-------------------------------------------------------------------------------------------------
 # 只支持
 #       sqlite  : YYYY-MM-DD HH:MM:SS         current_timestamp
 #       mysql   : YYYY-MM-DD HH:MM:SS         current_timestamp
 #       db2     : YYYY-MM-DD HH:MM:SS.xxxxxx  current timestamp
 #       oracle  : YYYYMMDDHHMMDDSS            to_char(sysdate-10/3600/24, 'YYYYMMDDHH24MISS')
-#---------------------------------------------------------
+#-------------------------------------------------------------------------------------------------
 # drop table sync_ctl;
 # create table sync_ctl (
 #     stable       char(32)       not null,
@@ -219,14 +219,13 @@ sub sync {
             # 插入目标库表
             my $dlog = $iconv->($self, $slog);
             eval {
-                
-	        Data::Dump->dump(@{$dlog}{@ifld_dst});
+	            # Data::Dump->dump(@{$dlog}{@ifld_dst});
                 $idst->execute(@{$dlog}{@ifld_dst});
             };
             if ($@) {
                 # 主键重复
                 if ($@ =~ /$unique/) {
-                    $dlog = $uconv->($self, $slog);
+                    $dlog = $uconv->($self, $slog, $dlog);
                     $udst->execute(@{$dlog}{@updf_dst}); 
                     $ucnt++;
                 }
