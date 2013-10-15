@@ -127,7 +127,8 @@ sub sync {
     # 查询源表记录语句
     my ($vfld_src, $tfld_src)  = @{$ctl}{qw/vfld_src tfld_src/};
     my @vfld_src = split ',', $vfld_src;
-    my $qfldstr  = join(', ', @vfld_src, $tfld_src);
+    my @qfld_src = (@vfld_src, $tfld_src);
+    my $qfldstr  = join(', ', @qfld_src);
     my $sql_qsrc = "select $qfldstr from $stbl where $tfld_src >= ? and $tfld_src < ?";  warn $sql_qsrc;
     my $qsrc = $sdb->prepare($sql_qsrc) or confess "can not prepare[$sql_qsrc]";
 
@@ -141,7 +142,8 @@ sub sync {
     my $unum = @ufld_dst;
 
     # 插入目标表语句
-    my $ifldstr  = join(', ', @kfld_dst, @vfld_dst, $tfld_dst);
+    my @ifld_dst = (@kfld_dst, @vfld_dst, $tfld_dst);
+    my $ifldstr  = join(', ', @ifld_dst);
     my $markstr  = join(', ', ('?') x ($knum + $vnum + 1));
     my $sql_idst = "insert into $dtbl ($ifldstr) values($markstr)";  warn "$sql_idst";
     my $idst = $ddb->prepare($sql_idst) or confess "can not prepare[$sql_idst]";
@@ -150,7 +152,8 @@ sub sync {
     my $setstr   = join(', ', map { "$_ = ?" } (@ufld_dst, $tfld_dst));
     my $condstr  = join(' and ', map { "$_ = ?" } @kfld_dst);
     my $sql_udst = "update $dtbl set $setstr where $condstr";   warn "$sql_udst";
-    my $udst = $ddb->prepare($sql_udst) or confess "can not prepare[$sql_udst]";
+    my $udst     = $ddb->prepare($sql_udst) or confess "can not prepare[$sql_udst]";
+    my @updf_dst = (@ufld_dst, $tfld_dst, @kfld_dst);
 
     # 同步配置配置, 负责将$slog转换为$dlog
     my $convert;
@@ -184,6 +187,9 @@ sub sync {
         confess "internal error";
     }
 
+    warn "ifld_dst[@ifld_dst]"; 
+    warn "updf_dst[@updf_dst]";
+
     # 重新设置qctl
     $sql_qctl = q/select interval, gap, last from sync_ctl where stable = ?/;
     $qctl = $ddb->prepare($sql_qctl) or confess "can not prepare[$sql_qctl]";
@@ -205,18 +211,18 @@ sub sync {
 
         # 开始一轮sync
         $qsrc->execute($beg, $end);
-        while(my $slog = $qsrc->fetchrow_arrayref()) {
+        while(my $slog = $qsrc->fetchrow_hashref()) {
           
             # 插入目标库表
             my $dlog = $iconv->($self, $slog);
             eval {
-                $idst->execute(@$dlog);
+                $idst->execute(@{$dlog}{@ifld_dst});
             };
             if ($@) {
                 # 主键重复
                 if ($@ =~ /$unique/) {
                     $dlog = $uconv->($self, $slog);
-                    $udst->execute(@$dlog); 
+                    $udst->execute(@{$dlog}{@updf_dst}); 
                     $ucnt++;
                 }
                 else {
