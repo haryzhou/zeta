@@ -193,6 +193,7 @@ sub sync {
     # 重新设置qctl
     $sql_qctl = q/select interval, gap, last from sync_ctl where stable = ?/;
     $qctl = $ddb->prepare($sql_qctl) or confess "can not prepare[$sql_qctl]";
+    my $logfh = $logger->logfh();
     while(1) {
 
         my $ucnt = 0;
@@ -237,7 +238,8 @@ sub sync {
         $ddb->commit();   # 目的数据库提交
 
         my $elapse = tv_interval($ts_beg);
-        $logger->info(sprintf("[$beg, $end): U[%04d] I[%04d] E[$elapse]", $ucnt, $icnt));
+        # $logger->info(sprintf("[$beg, $end): U[%04d] I[%04d] E[$elapse]", $ucnt, $icnt));
+        $logfh->print(sprintf("[$beg, $end): U[%04d] I[%04d] E[$elapse]\n", $ucnt, $icnt));
         sleep $ctl->{interval};
     }
 }
