@@ -1,0 +1,55 @@
+#!/usr/bin/perl
+use strict;
+use warnings;
+use Getopt::Long;
+use Zeta::POE::HTTPD;
+use POE;
+
+my $host;
+my $port;
+my $cb;
+my $rtn = GetOptions(
+    'host|h=s'     => \$host,
+    'port|p=i'     => \$port,
+    'callback|c=s' => \$cb,
+);
+unless($rtn) {
+    &usage;
+}
+unless($host) {
+    $host = '0.0.0.0';
+}
+unless($port) {
+    warn "port needed";
+    &usage;
+}
+unless($cb) {
+    warn "callback file needed";
+    &usage;
+}
+unless( -f $cb) {
+   warn "file[$cb does not exist";
+   &usage;
+}
+my $fcb = do $cb;
+unless($fcb) {
+   warn "can not do file[$cb] error[$@]";
+   &usage;
+}
+
+warn "listen on $ARGV[0]:$ARGV[1]";
+Zeta::POE::HTTPD->spawn( 
+   ip       => $host,
+   port     => $port,
+   callback => $fcb
+);
+$poe_kernel->run();
+exit 0;
+
+sub usage {
+    die <<EOF;
+usae: zsvc -h 192.168.1.10 \
+           -p 8888 \
+           -c /tmp/callback.pl
+EOF
+}
