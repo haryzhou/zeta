@@ -15,7 +15,7 @@ our @EXPORT = qw/ztimeout/;
 # );
 #
 sub ztimeout {
-    my ($func, $args, $timeout, $logger, $msg);
+    my ($func, $args, $timeout, $logger, $msg) = @_;
 
     my $rtn;
     eval {
