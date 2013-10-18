@@ -37,7 +37,6 @@ unless($fcb) {
    &usage;
 }
 
-warn "listen on $ARGV[0]:$ARGV[1]";
 Zeta::POE::HTTPD->spawn( 
    ip       => $host,
    port     => $port,
