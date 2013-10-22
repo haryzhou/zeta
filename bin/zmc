@@ -38,7 +38,7 @@ my $stp = Net::Stomp->new({
 });
 $stp->connect({ login => 'hello', passcode => 'there' });
 $stp->send({ 
-    destination => "/queue/$ENV{MAIL_QUEUE}",
+    destination => "/queue/$ENV{MQ_MAILER}",
     body        => encode_json({
         to     => \@to,
         cc     => \@cc,

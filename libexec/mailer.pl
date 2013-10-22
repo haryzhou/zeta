@@ -22,7 +22,7 @@ sub {
     # 连接消息队列
     my $stp = zkernel->zstomp();
     $stp->subscribe({   
-        destination             => "/queue/$ENV{MAIL_QUEUE}",
+        destination             => "/queue/$ENV{MQ_MAILER}",
         'ack'                   => 'client',
         'activemq.prefetchSize' => 1
     });

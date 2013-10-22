@@ -93,7 +93,7 @@ alias dbc='db2 connect to \$DB_NAME user \$DB_USER using \$DB_PASS'
 export STOMP_HOST=127.0.0.1
 export STOMP_PORT=61612
 export STOMP_DATA=/tmp
-export MAIL_QUEUE=mailer
+export MQ_MAILER=mailer
 
 # mlogd相关
 export MLOGD_IP=127.0.0.1
