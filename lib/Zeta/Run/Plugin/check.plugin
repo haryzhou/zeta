@@ -116,6 +116,12 @@ helper check_module => sub {
     my ($self, $m) = @_;
     
     my $channel = $self->channel;
+   
+    # check order
+    unless( exists $m->{order} ) {
+        warn "order must be provided";
+        return;
+    }
 
     #check reap
     unless ( exists $m->{'reap'} ) {

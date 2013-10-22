@@ -141,10 +141,10 @@ use warnings;
        main      => "\$ENV{${uprj}_HOME}/libexec/main.pl",
        args      => [ qw// ],
        with      => {
-           mailer => { host => \$ENV{STOMP_HOST}, port => \$ENV{STOMP_PORT} },  # 负责邮件发送服务
-           stomp  => { host => \$ENV{STOMP_HOST}, port => \$ENV{STOMP_PORT}, dir => \$ENV{STOMP_DATA} },  # 测试stomp服务器
-           mlogd  => { host => \$ENV{MLOGD_IP}, port => \$ENV{MLOGD_PORT},},                   # 日志监控HTTPD
-           # magent => { host => '127.0.0.1', port => 7777, monq => '12345'}, # 应用监控agent
+           stomp  => { order => -100, host => \$ENV{STOMP_HOST}, port => \$ENV{STOMP_PORT}, dir => \$ENV{STOMP_DATA} },  # 测试stomp服务器
+           mailer => { order => -99, host => \$ENV{STOMP_HOST}, port => \$ENV{STOMP_PORT} },  # 负责邮件发送服务
+           mlogd  => { order => -98, host => \$ENV{MLOGD_IP}, port => \$ENV{MLOGD_PORT},},                   # 日志监控HTTPD
+           # magent => { order => -97, host => '127.0.0.1', port => 7777, monq => '12345'}, # 应用监控agent
        },
    },
 

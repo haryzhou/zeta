@@ -288,11 +288,16 @@ helper process_runall => sub  {
     my ($self, $mlist) = @_;
 
     my $logger = $self->logger;
-    for my $mname ( keys %$mlist ) {
 
+    #--------------------------------------------------------------
+    # 启动顺序 支持, 模块配置增加order字段
+    #--------------------------------------------------------------
+    my @names = sort { $mlist->{$a}{order} <=> $mlist->{$b}{order} }  keys %$mlist;
+    
+    for my $mname (@names) {
         my $m = $mlist->{$mname};
         $m->{'name'} = $mname;
-
+       
         my $child;
         if ( exists $m->{size} && $m->{size} > 1 ) {
             $child = $self->process_batch($m);
@@ -300,7 +305,22 @@ helper process_runall => sub  {
         else {
             $child = $self->process_new($m);
         }
+        sleep 2;
     }
+
+    # for my $mname ( keys %$mlist ) {
+    #
+    #     # my $m = $mlist->{$mname};
+    #     # $m->{'name'} = $mname;
+    #
+    #     # my $child;
+    #     # if ( exists $m->{size} && $m->{size} > 1 ) {
+    #     #     # $child = $self->process_batch($m);
+    #     # }
+    #     # else {
+    #     #     # $child = $self->process_new($m);
+    #     # }
+    # }
     return 1;
 };
 

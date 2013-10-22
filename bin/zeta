@@ -108,12 +108,14 @@ my $mcfg = delete $zcfg->{module};
 my $with = delete $kcfg->{with};
 for (keys %$with) {
     my $name = 'Z' . $_;
+    my $order = delete $with->{$_}{order};
     $mcfg->{$name} = {
         code   => "$ENV{ZETA_HOME}/libexec/$_.pl",
         para   => [ %{$with->{$_}} ],
         size   => 1,
         reap   => 1,
         enable => 1,
+        order  => $order,
     },
 }
 
@@ -127,6 +129,7 @@ for (keys %$with) {
 # code    => "${apphome}/code.pl",
 # exec    => "${apphome}/exec.pl"
 # plugin  => { db => [], xx => [] }
+# order   => 1,
 # 
 #
 for my $mname (keys %$mcfg) {
@@ -139,6 +142,7 @@ for my $mname (keys %$mcfg) {
     $m->{mwriter} ||= [];
     $m->{mreader} ||= [];
     $m->{size}    ||= 1; 
+    $m->{order}   ||= 0;   # 启动顺序
 
     if ($m->{code} && $m->{exec}) {
         confess "[$mname] code and exec are mutual execlusive";
