@@ -90,7 +90,7 @@ export DB_SCHEMA=db2inst
 alias dbc='db2 connect to \$DB_NAME user \$DB_USER using \$DB_PASS'
 
 # stomp相关
-export STOMP_IP=127.0.0.1
+export STOMP_HOST=127.0.0.1
 export STOMP_PORT=61612
 export STOMP_DATA=/tmp
 
@@ -140,8 +140,9 @@ use warnings;
        main      => "\$ENV{${uprj}_HOME}/libexec/main.pl",
        args      => [ qw// ],
        with      => {
-           stomp => { host => \$ENV{STOMP_IP}, port => \$ENV{STOMP_PORT}, dir => \$ENV{STOMP_DATA} },  # 测试stomp服务器
-           mlogd => { host => \$ENV{MLOGD_IP}, port => \$ENV{MLOGD_PORT},},                   # 日志监控HTTPD
+           mailer => { host => \$ENV{STOMP_HOST}, port => \$ENV{STOMP_PORT} },  # 负责邮件发送服务
+           stomp  => { host => \$ENV{STOMP_HOST}, port => \$ENV{STOMP_PORT}, dir => \$ENV{STOMP_DATA} },  # 测试stomp服务器
+           mlogd  => { host => \$ENV{MLOGD_IP}, port => \$ENV{MLOGD_PORT},},                   # 日志监控HTTPD
            # magent => { host => '127.0.0.1', port => 7777, monq => '12345'}, # 应用监控agent
        },
    },
@@ -182,21 +183,6 @@ use Net::Stomp;
 # 返回值
 #
 my \$cfg = {
-
-    # 数据库配置 
-    db => {
-        dsn    => "dbi:DB2:\$ENV{DB_NAME}",
-        user   => "\$ENV{DB_USER}",
-        pass   => "\$ENV{DB_PASS}",
-        schema => "\$ENV{DB_SCHEMA}",
-    },
-
-    # stomp
-    stomp => {
-        host => '127.0.0.1',
-        port => '61618',
-    },
-
 };
 
 
@@ -211,7 +197,8 @@ helper zconfig => sub { \$cfg };
 helper dbh  => sub {
     my \$cfg = zkernel->zconfig();
     my \$dbh = DBI->connect(
-        \@{\$cfg->{db}}{qw/dsn user pass/},
+        \$ENV{DSN},
+        \@ENV{qw/DB_USER DB_PASS/},
         {
             RaiseError       => 1,
             PrintError       => 0,
@@ -222,13 +209,13 @@ helper dbh  => sub {
         }
     );
     unless(\$dbh) {
-        zlogger->error("can not connet db[\@{\$cfg->{db}}{qw/dsn user pass/}], quit");
+        zlogger->error("can not connect db[\$ENV{DSN}]");
         exit 0;
     }
 
     # 设置默认schema
-    \$dbh->do("set current schema \$cfg->{db}{schema}")
-        or confess "can not set current schema \$cfg->{db}{schema}";
+    \$dbh->do("set current schema \$ENV{DB_SCHEMA}")
+        or confess "can not set current schema \$ENV{DB_SCHEMA}";
     return \$dbh;
 };
 
@@ -239,20 +226,18 @@ helper zstomp => sub {
     my \$cfg = shift->zconfig();
     # 连接stomp
     my \$stp = Net::Stomp->new({
-        hostname => \$cfg->{stomp}{host},
-        port     => \$cfg->{stomp}{port} ,
+        hostname => \$ENV{STOMP_HOST},
+        port     => \$ENV{STOMP_PORT},
     }) or confess <<STOMP;
 Net::Stomp failed with 
     { 
-        hostname => \$cfg->{stomp}{host}, 
-        port     => \$cfg->{stomp}{port} 
+        hostname => \$ENV{STOMP_HOST},
+        port     => \$ENV{STOMP_PORT},
 }
 STOMP
     \$stp->connect({ login => 'hello', passcode => 'there' });
     return \$stp;
 };
-
-
 
 #
 # 子进程需要的通用初始化
