@@ -1,0 +1,23 @@
+#!/usr/bin/perl
+use strict;
+use warnings;
+use Getopt::Long;
+use Data::Dump;
+use HTML::Escape qw/escape_html/;
+use Net::Stomp;
+
+my $stp = Net::Stomp->new({ 
+    hostname => $ENV{STOMP_HOST}, 
+    port     => $ENV{STOMP_PORT}
+});
+$stp->connect({ login => 'hello', passcode => 'there' });
+$stp->send({ 
+    destination => "/queue/$ENV{MAIL_QUEUE}",
+    body        => encode_json({
+        to   => '18874881230\@139.com',
+        sub  => 'test msg',
+        body => 'test',
+    }),
+});
+$stp->disconnect;
+
