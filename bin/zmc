@@ -5,6 +5,32 @@ use Getopt::Long;
 use Data::Dump;
 use HTML::Escape qw/escape_html/;
 use Net::Stomp;
+use JSON::XS;
+use Getopt::Long;
+
+my @to;
+my @cc;
+my @attach;
+my $sub;
+my $body;
+my $simple;
+my $rtn = GetOptions(
+    "to|t=s"      => \@to,
+    "cc|c=s"      => \@cc,
+    "attach|a=s"  => \@attach,
+    "subject|s=s" => \$sub,
+    "body|b=s"    => \$body,
+    "simple|m"    => \$simple,
+);
+unless($rtn) {
+    usage();
+}
+unless(@to) {
+    usage();
+}
+unless($sub && $body) {
+    usage();
+}
 
 my $stp = Net::Stomp->new({ 
     hostname => $ENV{STOMP_HOST}, 
@@ -14,10 +40,15 @@ $stp->connect({ login => 'hello', passcode => 'there' });
 $stp->send({ 
     destination => "/queue/$ENV{MAIL_QUEUE}",
     body        => encode_json({
-        to   => '18874881230\@139.com',
-        sub  => 'test msg',
-        body => 'test',
+        to     => \@to,
+        cc     => \@cc,
+        sub    => 'test msg',
+        body   => 'test',
+        simple => $simple,
     }),
 });
 $stp->disconnect;
+
+__END__
+zmc -t 18874881230@139.com -s 'test sub' -b 'test body' -m
 

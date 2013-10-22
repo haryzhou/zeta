@@ -22,12 +22,12 @@ sub {
     # 连接消息队列
     my $stp = zkernel->zstomp();
     $stp->subscribe({   
-        destination             => "/queue/$ENV{MAIL_QUEUE}";
+        destination             => "/queue/$ENV{MAIL_QUEUE}",
         'ack'                   => 'client',
         'activemq.prefetchSize' => 1
     });
 
-    while( my $frame = $stp->receive_frame) {
+    while(my $frame = $stp->receive_frame) {
          my $msg = decode_json($frame->body); 
          #
          #  mode   => 
@@ -38,7 +38,7 @@ sub {
          #  attach => 
          #   
          my $m;
-         if ($msg->{mode} =~ /simple/) {
+         if ($msg->{simple}) {
               $m = Zeta::Mailer::Simple->new();
          }
          else {
