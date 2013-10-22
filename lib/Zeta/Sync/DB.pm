@@ -55,8 +55,8 @@ sub new {
     my $args = { @_ };
     my $logger = $args->{logger};
  
-    my $src = &_init_src($args->{src});
-    my $dst = &_init_dst($args->{dst});
+    my $src = &_init_src($args->{src}) or return;
+    my $dst = &_init_dst($args->{dst}) or return;
 
     # 构建对象
     my $self = bless {
@@ -250,16 +250,20 @@ sub sync {
 sub _init_src {
     my $src = shift;
 
-    my $dbh = DBI->connect(@{$src}{qw/dsn user pass/}, {
-        RaiseError       => 1,
-        PrintError       => 0,
-        AutoCommit       => 0,
-        FetchHashKeyName => 'NAME_lc',
-        ChopBlanks       => 1,
-        InactiveDestroy  => 1,
-    });
+    my $dbh;
+    eval {
+       $dbh = DBI->connect(@{$src}{qw/dsn user pass/}, {
+            RaiseError       => 1,
+            PrintError       => 0,
+            AutoCommit       => 0,
+            FetchHashKeyName => 'NAME_lc',
+            ChopBlanks       => 1,
+            InactiveDestroy  => 1,
+        });
+    };
     unless($dbh) {
-        confess "can not connect[$src->{dsn}]";
+        warn "can not connect[$src->{dsn}] error[$@]";
+        return;
     }
     
     my $stype;
@@ -301,16 +305,20 @@ sub _init_dst {
     my $dst = shift;
 
     # 连接数据库
-    my $dbh = DBI->connect(@{$dst}{qw/dsn user pass/}, {
-        RaiseError       => 1,
-        PrintError       => 0,
-        AutoCommit       => 0,
-        FetchHashKeyName => 'NAME_lc',
-        ChopBlanks       => 1,
-        InactiveDestroy  => 1,
-    });
+    my $dbh;
+    eval {
+        $dbh  = DBI->connect(@{$dst}{qw/dsn user pass/}, {
+            RaiseError       => 1,
+            PrintError       => 0,
+            AutoCommit       => 0,
+            FetchHashKeyName => 'NAME_lc',
+            ChopBlanks       => 1,
+            InactiveDestroy  => 1,
+        });
+    };
     unless($dbh) {
-        confess "can not connect[$dst->{dsn}]";
+        warn "can not connect[$dst->{dsn}] error[$@]";
+        return;
     }
     my $dtype;
 
