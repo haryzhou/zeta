@@ -426,11 +426,14 @@ helper process_sigterm => sub {
 
     my @died;
 
+    my @pname = sort { $b <=> $a }  keys %$running;
+
     # 给所有运行中的进程发送TERM信号
-    for my $name ( keys %$running ) {
+    for my $name ( keys @pname ) {
         my $pid = $running->{$name}->[0];
         my $arg = $running->{$name}->[1];
-        $logger->warn("begin kill $name pid[$pid]");
+        my $ord = $arg->{order};
+        $logger->warn("begin kill $name pid[$pid] order[$order]");
         kill 'TERM', $pid if $pid > 0;
         push @died, $pid;
     }

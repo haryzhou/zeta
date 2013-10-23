@@ -55,6 +55,7 @@ sub spawn {
 # (
 #    lfd      => $lfd,
 #    callback => \&func,
+#    context  => $context,
 #    codec    => 'ascii n, binary n, http'
 #    alias   => 'tcpd'
 #    events  => {
@@ -76,8 +77,10 @@ sub _spawn {
     }
 
     my $callback;
+    my $ctx;
     if ($args->{callback}) {
         $callback = $args->{callback};
+        $ctx      = $args->{context};
     }
     else {
         confess "module needed" unless $args->{module};
@@ -87,12 +90,10 @@ sub _spawn {
         confess "can not load module[$args->{module}] error[$@]" if $@;
 
         # 构造管理对象
-        my $admin = $args->{module}->new( @{$args->{para}} ) 
+        $ctx = $args->{module}->new( @{$args->{para}} ) 
           or confess "can not new $args->{module} with " . Data::Dump->dump( $args->{para} );
 
-        $callback = sub {
-            $admin->handle(+shift);
-        };
+        $callback = \&{"$args->{module}::handle"};
     }
 
     # 过滤器
@@ -161,7 +162,7 @@ sub _spawn {
                 eval {
                     my $req = $class->_in($_[ARG0]);
                     warn "recv request: \n" . Data::Dump->dump($req) if DEBUG;
-                    my $res = $callback->($req);
+                    my $res = $callback->($ctx, $req);
                     $_[HEAP]{client}{$_[ARG1]}->put($class->_out($res));
                 };
                 if ($@) {
