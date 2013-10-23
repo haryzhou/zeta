@@ -5,7 +5,9 @@ sub new {
 }
 
 sub handle {
-    my $self = shift;
+    (my $ctx, $req) = @_;
+    use Data::Dump;
+    Data::Dump->dump(\@_);
     return {
        count => $self->{count}++,
     };
