@@ -426,10 +426,10 @@ helper process_sigterm => sub {
 
     my @died;
 
-    my @pname = sort { $b <=> $a }  keys %$running;
+    my @pname = sort { $running->{$b}[1]{order} <=> $running->{$a}[1]{order} }  keys %$running;
 
     # 给所有运行中的进程发送TERM信号
-    for my $name ( keys @pname ) {
+    for my $name ( @pname ) {
         my $pid = $running->{$name}->[0];
         my $arg = $running->{$name}->[1];
         my $ord = $arg->{order};
