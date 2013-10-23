@@ -30,12 +30,12 @@ sub {
     while(my $frame = $stp->receive_frame) {
          my $msg = decode_json($frame->body); 
          #
-         #  mode   => 
-         #  to     =>
-         #  cc     =>
-         #  sub    =>
-         #  body   =>
-         #  attach => 
+         #  mode    => 
+         #  to      =>
+         #  cc      =>
+         #  subject =>
+         #  body    =>
+         #  attach  => 
          #   
          my $m;
          if ($msg->{simple}) {

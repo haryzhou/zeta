@@ -84,9 +84,9 @@ sub cc {
 sub subject {
     my $self = shift;
     unless (@_) {
-        return $self->{'sub'};
+        return $self->{'subject'};
     }
-    $self->{'sub'} = $_[0];
+    $self->{'subject'} = $_[0];
     return $self;
 }
 
@@ -130,14 +130,14 @@ sub set_all {
     my $from   = $args->{'from'};      # from
     my $to     = $args->{'to'};        # to
     my $cc     = $args->{'cc'};        # cc
-    my $sub    = $args->{'sub'};       # 主题
+    my $sub    = $args->{'subject'};       # 主题
     my $body   = $args->{'body'};      # 正文
     my $attach = $args->{'attach'};    # 附件绝对路径
 
     $self->{'from'}   = $from;
     $self->{'to'}     = $to;
     $self->{'cc'}     = $cc;
-    $self->{'sub'}    = $sub;
+    $self->{'subject'}    = $sub;
     $self->{'body'}   = $body;
     $self->{'attach'} = $attach;
 
@@ -161,7 +161,7 @@ sub send {
     my @args = (
         From    => $self->{'from'},
         To      => $self->{'to'},
-        Subject => $self->{'sub'},
+        Subject => $self->{'subject'},
         Type    => 'text/plain',
         Data    => $self->{body}
     );
@@ -205,7 +205,7 @@ head1 NAME
   $m->set_all(
     'from'   => 'zhouchao@allinpay.com'
     'to'     => [ 'zhouchao@allinpay.com', 'wangjia@allinpay.com' ] ,
-    'sub'    => 'subject1',
+    'subject'    => 'subject1',
     'body'   => 'body',
     'attach' => ['./Log.pm', './Mailer.pm' ],
   );
@@ -216,7 +216,7 @@ head1 NAME
     'from'   => 'zhouchao@allinpay.com',
     'to'     => [ 'zhouchao@allinpay.com', 'wangjia@allinpay.com' ] ,
     'cc'     => [ 'zhouchao@allinpay.com', 'wangjia@allinpay.com' ] ,
-    'sub'    => 'subject2',
+    'subject'    => 'subject2',
     'body'   => 'body',
     'attach' => ['./DB.pm' ],
   );
