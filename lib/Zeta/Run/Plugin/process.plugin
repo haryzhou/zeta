@@ -433,7 +433,7 @@ helper process_sigterm => sub {
         my $pid = $running->{$name}->[0];
         my $arg = $running->{$name}->[1];
         my $ord = $arg->{order};
-        $logger->warn("begin kill $name pid[$pid] order[$order]");
+        $logger->warn("begin kill $name pid[$pid] order[$ord]");
         kill 'TERM', $pid if $pid > 0;
         push @died, $pid;
     }
