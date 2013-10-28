@@ -19,12 +19,24 @@ my $dbh = DBI->connect(
 my $dbex = Zeta::DB::Excel->new(dbh => $dbh);
 
 $dbex->excel(
-    hmap   => { f1 => '交易金额',  f2 => '扣率',  f3 => '手续费',  f4 => '分润' },
-    select => "select * from dbex",
-    flist  => [qw/f2 f1 f4 f3/],
-    sum    => [qw/f1 f4/],
-    fname  => "./dbex.xls",
-    filter => \&filter,
+    filename => './dbex.xls',
+    sheet => {
+        '分润1' => {
+            hmap   => { f1 => '交易金额',  f2 => '扣率',  f3 => '手续费',  f4 => '分润' },
+            select => "select * from dbex",
+            flist  => [qw/f2 f1 f4 f3/],
+            sum    => [qw/f1 f4/],
+            filter => \&filter,
+        },
+
+        '分润2' => {
+            hmap   => { f1 => '交易金额',  f2 => '扣率',  f3 => '手续费',  f4 => '分润' },
+            select => "select * from dbex",
+            flist  => [qw/f2 f1 f4 f3/],
+            sum    => [qw/f1 f4/],
+            filter => \&filter,
+        },
+    },
 );
 
 sub filter {
