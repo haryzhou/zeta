@@ -35,7 +35,7 @@ unless($sub && $body) {
 my $m;
 # 简单信息 - 适合发送短信
 if ($sms) {
-    $m = Zeta::Mailer::Simple->new( debug => 1,);
+    $m = Zeta::Mailer::Simple->new();
 }
 else {
     $m = Zeta::Mailer->new( debug => 0,);
