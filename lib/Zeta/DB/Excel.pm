@@ -29,6 +29,8 @@ sub excel {
     # excel文件
     my $book  = Spreadsheet::WriteExcel->new($args->{fname});
     my $sheet = $book->add_worksheet();
+    my $hfmt  = $book->add_format(border => 1, bg_color => 'gray');
+    my $rfmt  = $book->add_format(border => 1);
 
     # sql语句准备
     my $sth = $self->{dbh}->prepare($args->{select});
@@ -40,7 +42,7 @@ sub excel {
 
     # 写入表头, 按flist描述的顺序写入表头
     my @head = map { decode('utf8', $_) } @{$args->{hmap}}{@{$args->{flist}}};
-    $sheet->write('A1', \@head);
+    $sheet->write('A1', \@head, $hfmt);
     $line++;
    
     # 写入数据行 
@@ -55,7 +57,7 @@ sub excel {
             }
         }
         my @flds = @{$row}{@{$args->{flist}}}; 
-        $sheet->write("A$line", \@flds);
+        $sheet->write("A$line", \@flds, $rfmt);
         $line++;
         for (@{$args->{sum}}) {
             $sum->{$_} += $row->{$_};
@@ -64,11 +66,12 @@ sub excel {
     # warn Dumper($sum);
   
     # 合计部分
-    # my @sum = map { '' unless defined $_ } @{$sum}{@{$args->{flist}}};
-    my @sum = @{$sum}{@{$args->{flist}}};
-    # warn Dumper(\@sum);
-    $sum[0] = decode('utf8', '合计');
-    $sheet->write("A$line", \@sum);
+    if ($args->{sum}) {
+        my @sum = @{$sum}{@{$args->{flist}}};
+        # warn Dumper(\@sum);
+        $sum[0] = decode('utf8', '合计');
+        $sheet->write("A$line", \@sum, $hfmt);
+    }
 
     $book->close();
 }
