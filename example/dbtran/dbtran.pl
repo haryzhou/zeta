@@ -1,7 +1,7 @@
 #!/usr/bin/perl
 use strict;
 use warnings;
-use Zeta::DBTran;
+use Zeta::DB::Tran;
 use Zeta::Log;
 use DBI;
 
@@ -23,7 +23,7 @@ my $dbh = DBI->connect(
     },
 );
 
-my $dbtran = Zeta::DBTran->new(
+my $dbtran = Zeta::DB::Tran->new(
     logger => $logger,
     dbh    => $dbh,
 );

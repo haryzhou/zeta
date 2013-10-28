@@ -1,6 +1,6 @@
-package Zeta::DBTran;
+package Zeta::DB::Tran;
 # 
-#  DBTran.pm
+#  Zeta::DB::Tran.pm
 #  zeta
 #      数据库迁移
 #  Created by zhou chao on 2013-10-13.
@@ -16,7 +16,7 @@ use constant {
 };
 
 #
-# Zeta::DBTran->new( 
+# Zeta::DB::Tran->new( 
 #    logger => $logger, 
 #    dbh    => $dbh, 
 #    batch  => 1000

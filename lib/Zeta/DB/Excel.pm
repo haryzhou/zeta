@@ -6,6 +6,8 @@ use Spreadsheet::WriteExcel;
 use Data::Dumper;
 use Encode;
 
+
+
 #
 # Zeta::DB::Excel->new( dbh => $dbh);
 #
@@ -24,36 +26,178 @@ sub new {
 #          sum    => [ qw/fld2 fld1/ ],           # 哪些域需要汇总
 #          filter => \&filter,                    # 行过滤, 如有的域需要decode('utf8', $fld);
 #      },
-#      sheet1 => {}
+#      sheet1 => {
+#      }
+#  }
+#
+#  返回值:
+#  {
+#      sheet => $原来的sheet_增加了stat包含了[$col, $]
+#      book  => $book
+#      
 #  }
 #
 sub excel {
     my $self = shift;
     my $args = { @_ };
 
-
     # excel文件
-    my $book  = Spreadsheet::WriteExcel->new($args->{filename});
+    my $book  = Spreadsheet::WriteExcel->new(delete $args->{filename});
     my $hfmt  = $book->add_format(border => 1, bg_color => 'gray');
     my $rfmt  = $book->add_format(border => 1);
-    $self->{book} = $book;
-    $self->{hfmt} = $hfmt;
-    $self->{rfmt} = $rfmt;
-
+    
+    my $res = bless {
+        dbh   => $self->{dbh},
+        sheet => $args->{sheet},
+        book  => $book,
+        hfmt  => $hfmt,
+        rfmt  => $rfmt,
+    },  __PACKAGE__ . '::Resource';
+    
     for my $name (keys %{$args->{sheet}}) {
-        $self->add_worksheet(decode('utf8', $name), $args->{sheet}->{$name});
+        $res->add_worksheet($name, $args->{sheet}->{$name});
     }
-    $book->close();
 
+    return $res;
+}
+
+package Zeta::DB::Excel::Resource;
+use Carp;
+use Encode;
+use Data::Dumper;
+
+# $res->cols('Sheet1');
+# $res->rows('Sheet1');
+
+sub  rows { shift->{sheet}{+shift}{rows};              }
+sub  cols { scalar @{+shift->{sheet}{+shift}{flist}};  } 
+
+#------------------------------------------------
+# 
+# $self = {
+#     book  => $book
+#     sheet => {},
+#     hfmt  => $hfmt,
+#     rfmt  => $rfmt,
+# }
+#
+# $self->add_chart(
+#     type  => 'line|area|bar|column|pie|scatter|stock',
+#     name  => 'chart name',
+#     position => [ '分润1', 'A8'],
+#     series => [
+#          {
+#              categories => {
+#                  sheet => $sheet_name, 
+#                  field => $fld, 
+#                  range => [ $beg, $end],
+#              },
+#              values => {
+#                  sheet => $sheet_name, 
+#                  field => $fld, 
+#                  range => [ $beg, $end],
+#              },
+#              name       => 'Test data series 1',
+#          },
+#          {
+#              
+#          }
+#     ],
+#     title => '标题',
+#     legend => 'none|bottom',
+#     axis_x => 'Sample number',
+#     axis_y => 'Sample length(cm)',
+# );
+#------------------------------------------------
+sub add_chart {
+    my $self = shift;
+    my $args = { @_ };
+    
+    my $chart;
+    if ($args->{position}) {
+        $chart = $self->{book}->add_chart(
+            type     => $args->{type},
+            name     => $args->{name},
+            embedded => 1
+        );
+    } else {
+        $chart = $self->{book}->add_chart(
+            type => $args->{type},
+            name => $args->{name},
+        );
+    }
+    my $series = $args->{series};
+    
+    for (@$series) {
+        # Data::Dump->dump($_);
+        
+        my $catidx = &index($self->{sheet}{$_->{categories}{sheet}}{flist}, $_->{categories}{field});
+        my $validx = &index($self->{sheet}{$_->{values}{sheet}    }{flist}, $_->{values    }{field});
+        
+        my $catbeg = $_->{categories}{range}[0];
+        my $catend = $_->{categories}{range}[1];
+        
+        my $valbeg = $_->{values}{range}[0];
+        my $valend = $_->{values}{range}[1];
+        
+        # warn "catidx : $catidx";
+        # warn "catbeg : $catbeg";
+        # warn "catend : $catend";
+        # 
+        # warn "validx : $validx";
+        # warn "valbeg : $valbeg";
+        # warn "valend : $valend";
+        
+        my $csname = decode('utf8', $_->{categories}{sheet});
+        my $vsname = decode('utf8', $_->{values}{sheet});
+        # 
+        # my $csname = $_->{categories}{sheet};
+        # my $vsname = $_->{values}{sheet};
+        
+        # my $catstr = "=$_->{categories}{sheet}!\$$catidx\$$catbeg:\$$catidx\$$catend";
+        # my $valstr = "=$_->{values}{sheet}!\$$validx\$$valbeg:\$$validx\$$valend";
+        
+        my $catstr = "=$csname!\$$catidx\$$catbeg:\$$catidx\$$catend";
+        my $valstr = "=$vsname!\$$validx\$$valbeg:\$$validx\$$valend";
+        
+        # warn "catstr : $catstr";
+        # warn "valstr : $valstr";
+        $chart->add_series(
+            categories => $catstr,
+            values     => $valstr,
+            name       => $_->{name},
+        );
+    }
+    
+    if ($args->{title} ) {$chart->set_title(name => $args->{title});  }
+    if ($args->{axis_x}) {$chart->set_x_axis(name => $args->{axis_x});}
+    if ($args->{axis_y}) {$chart->set_y_axis(name => $args->{axis_y});}
+    if ($args->{legend}) {$chart->set_legend(name => $args->{axis_y});}
+    
+    if ($args->{position}) {
+        # use Data::Dump;
+        # Data::Dump->dump($self->{sheet}{$args->{position}[0]});
+        $self->{sheet}{$args->{position}[0]}{handle}->insert_chart($args->{position}[1], $chart);
+    }
 }
 
 #
+# book写入文件关闭
 #
+sub close {
+    my $self = shift;
+    $self->{book}->close();
+}
+
+
+#
+# $resource->add_worksheet;
 #
 sub add_worksheet {
 
     my ($self, $name, $args) = @_;
-    my $sheet = $self->{book}->add_worksheet($name);
+    my $sheet = $self->{book}->add_worksheet(decode('utf8', $name));
+    # my $sheet = $self->{book}->add_worksheet($name);
     my $hfmt  = $self->{hfmt};
     my $rfmt  = $self->{rfmt};
 
@@ -83,35 +227,31 @@ sub add_worksheet {
         my @flds = @{$row}{@{$args->{flist}}}; 
         $sheet->write("A$line", \@flds, $rfmt);
         $line++;
-        # for (@{$args->{sum}}) {
-        #    $sum->{$_} += $row->{$_};
-        # }
     }
-    # warn Dumper($sum);
   
     # 合计部分
     if ($args->{sum}) {
         my $end = $line - 1;
         my %sum = map { $_ => undef } @{$args->{flist}};
         for (@{$args->{sum}}) {
-            my $idx = $self->index($args->{flist}, $_);
+            my $idx = &index($args->{flist}, $_);
             $sum{$_} = "=SUM(${idx}2:${idx}$end)";
         }
         my @sum = @sum{@{$args->{flist}}};
         $sum[0] = decode('utf8', '合计');
-        print Dumper(\@sum);
+        # print Dumper(\@sum);
         $sheet->write("A$line", \@sum, $hfmt);
     }
+    
+    $self->{sheet}{$name}{handle} = $sheet;
+    $self->{sheet}{$name}{rows}   = $line;
 
-    return $self;
 }
 
 #
 #
 #
-#
 sub index {
-    my $self = shift;
     my ($flist, $fld) = @_;
     # warn "index called with: " . Dumper(\@_);
     my $idx = 0;
@@ -126,13 +266,13 @@ sub index {
 #  Excel的列index计算
 sub _index {
     my $idx = shift;
-    warn "calc _index($idx)";
+    # warn "calc _index($idx)";
     my @data;
     while(1) {
         my $res = $idx % 26;
         unshift @data, chr(ord('A')+$res); 
         $idx = int($idx/26);
-        warn "idx now[$idx]";
+        # warn "idx now[$idx]";
         last if $idx == 0;
     } 
     return join '', @data;

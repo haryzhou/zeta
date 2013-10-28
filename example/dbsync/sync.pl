@@ -3,14 +3,14 @@ use strict;
 use warnings;
 use Data::Dump;
 use Zeta::Log;
-use Zeta::Sync::DB;
+use Zeta::DB::Sync;
 
 my $logger = Zeta::Log->new(
     logurl => 'stderr',
     loglevel => 'DEBUG',
 );
 
-my $sync = Zeta::Sync::DB->new(
+my $sync = Zeta::DB::Sync->new(
     logger => $logger,
     src => {
         dsn => 'dbi:DB2:zdb_ypcs',

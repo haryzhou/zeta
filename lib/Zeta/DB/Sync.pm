@@ -1,17 +1,17 @@
-package Zeta::Sync::DB;
+package Zeta::DB::Sync;
 use strict;
 use warnings;
 use Carp;
 use Time::HiRes qw/gettimeofday tv_interval/;
 use DBI;
 
-#-------------------------------------------------------------------------------------------------
+#-------------------------------------------------------------
 # 只支持
 #       sqlite  : YYYY-MM-DD HH:MM:SS         current_timestamp
 #       mysql   : YYYY-MM-DD HH:MM:SS         current_timestamp
 #       db2     : YYYY-MM-DD HH:MM:SS.xxxxxx  current timestamp
 #       oracle  : YYYYMMDDHHMMDDSS            to_char(sysdate-10/3600/24, 'YYYYMMDDHH24MISS')
-#-------------------------------------------------------------------------------------------------
+#---------------------------------------------------------
 # drop table sync_ctl;
 # create table sync_ctl (
 #     stable       char(32)       not null,
@@ -34,7 +34,7 @@ use DBI;
 #     ts_u  timestamp
 # );
 #---------------------------------------------------------
-# my $dbs = Zeta::Sync::DB->new(
+# my $dbs = Zeta::DB::Sync->new(
 #     logger => $logger,
 #     src => {
 #        dsn     => 'dbi:DB2:zdb',
@@ -55,8 +55,8 @@ sub new {
     my $args = { @_ };
     my $logger = $args->{logger};
  
-    my $src = &_init_src($args->{src});
-    my $dst = &_init_dst($args->{dst});
+    my $src = &_init_src($args->{src}) or return;
+    my $dst = &_init_dst($args->{dst}) or return;
 
     # 构建对象
     my $self = bless {
@@ -129,9 +129,8 @@ sub sync {
     my @vfld_src = split ',', $vfld_src;
     my @qfld_src = (@vfld_src, $tfld_src);
     my $qfldstr  = join(', ', @qfld_src);
-    my $sql_qsrc = "select $qfldstr from $stbl where $tfld_src >= ? and $tfld_src < ?";  
+    my $sql_qsrc = "select $qfldstr from $stbl where $tfld_src >= ? and $tfld_src < ?";  warn $sql_qsrc;
     my $qsrc = $sdb->prepare($sql_qsrc) or confess "can not prepare[$sql_qsrc]";
-    $logger->debug($sql_qsrc);
 
     # 目标数据库
     my ($dtbl,$kfld_dst,$vfld_dst,$ufld_dst,$tfld_dst) = @{$ctl}{qw/dtable kfld_dst vfld_dst ufld_dst tfld_dst/};
@@ -146,9 +145,8 @@ sub sync {
     my @ifld_dst = (@kfld_dst, @vfld_dst, $tfld_dst);
     my $ifldstr  = join(', ', @ifld_dst);
     my $markstr  = join(', ', ('?') x ($knum + $vnum + 1));
-    my $sql_idst = "insert into $dtbl ($ifldstr) values($markstr)";  
+    my $sql_idst = "insert into $dtbl ($ifldstr) values($markstr)";  warn "$sql_idst";
     my $idst = $ddb->prepare($sql_idst) or confess "can not prepare[$sql_idst]";
-    $logger->debug($sql_idst);
 
     # 更新语句
     my $setstr   = join(', ', map { "$_ = ?" } (@ufld_dst, $tfld_dst));
@@ -156,7 +154,6 @@ sub sync {
     my $sql_udst = "update $dtbl set $setstr where $condstr";   warn "$sql_udst";
     my $udst     = $ddb->prepare($sql_udst) or confess "can not prepare[$sql_udst]";
     my @updf_dst = (@ufld_dst, $tfld_dst, @kfld_dst);
-    $logger->debug($sql_udst);
 
     # 同步配置配置, 负责将$slog转换为$dlog
     my $convert;
@@ -190,13 +187,15 @@ sub sync {
         confess "internal error";
     }
 
-    $logger->debug("ifld_dst[@ifld_dst]");
-    $logger->debug("updf_dst[@updf_dst]");
+    warn "ifld_dst[@ifld_dst]"; 
+    warn "updf_dst[@updf_dst]";
 
     # 重新设置qctl
     $sql_qctl = q/select interval, gap, last from sync_ctl where stable = ?/;
     $qctl = $ddb->prepare($sql_qctl) or confess "can not prepare[$sql_qctl]";
+    my $logfh = $logger->logfh();
     while(1) {
+
         my $ucnt = 0;
         my $icnt = 0;
 
@@ -212,20 +211,18 @@ sub sync {
         my $beg = $ctl->{last};
 
         # 开始一轮sync
-        # warn "execute $sql_qsrc with[$beg, $end)";
         $qsrc->execute($beg, $end);
         while(my $slog = $qsrc->fetchrow_hashref()) {
-            
+          
             # 插入目标库表
             my $dlog = $iconv->($self, $slog);
             eval {
-	            # Data::Dump->dump(@{$dlog}{@ifld_dst});
                 $idst->execute(@{$dlog}{@ifld_dst});
             };
             if ($@) {
                 # 主键重复
                 if ($@ =~ /$unique/) {
-                    $dlog = $uconv->($self, $slog, $dlog);
+                    $dlog = $uconv->($self, $slog);
                     $udst->execute(@{$dlog}{@updf_dst}); 
                     $ucnt++;
                 }
@@ -237,12 +234,12 @@ sub sync {
                 $icnt++;
             }
         }
-        # warn "uctl($end, $stbl)";
-        $uctl->execute($end, $stbl);   
+        $uctl->execute($end, $stbl);
         $ddb->commit();   # 目的数据库提交
 
         my $elapse = tv_interval($ts_beg);
-        $logger->info(sprintf("[$beg, $end): U[%04d] I[%04d] E[$elapse]", $ucnt, $icnt));
+        # $logger->info(sprintf("[$beg, $end): U[%04d] I[%04d] E[$elapse]", $ucnt, $icnt));
+        $logfh->print(sprintf("[$beg, $end): U[%04d] I[%04d] E[$elapse]\n", $ucnt, $icnt));
         sleep $ctl->{interval};
     }
 }
@@ -253,16 +250,20 @@ sub sync {
 sub _init_src {
     my $src = shift;
 
-    my $dbh = DBI->connect(@{$src}{qw/dsn user pass/}, {
-        RaiseError       => 1,
-        PrintError       => 0,
-        AutoCommit       => 0,
-        FetchHashKeyName => 'NAME_lc',
-        ChopBlanks       => 1,
-        InactiveDestroy  => 1,
-    });
+    my $dbh;
+    eval {
+       $dbh = DBI->connect(@{$src}{qw/dsn user pass/}, {
+            RaiseError       => 1,
+            PrintError       => 0,
+            AutoCommit       => 0,
+            FetchHashKeyName => 'NAME_lc',
+            ChopBlanks       => 1,
+            InactiveDestroy  => 1,
+        });
+    };
     unless($dbh) {
-        confess "can not connect[$src->{dsn}]";
+        warn "can not connect[$src->{dsn}] error[$@]";
+        return;
     }
     
     my $stype;
@@ -304,16 +305,20 @@ sub _init_dst {
     my $dst = shift;
 
     # 连接数据库
-    my $dbh = DBI->connect(@{$dst}{qw/dsn user pass/}, {
-        RaiseError       => 1,
-        PrintError       => 0,
-        AutoCommit       => 0,
-        FetchHashKeyName => 'NAME_lc',
-        ChopBlanks       => 1,
-        InactiveDestroy  => 1,
-    });
+    my $dbh;
+    eval {
+        $dbh  = DBI->connect(@{$dst}{qw/dsn user pass/}, {
+            RaiseError       => 1,
+            PrintError       => 0,
+            AutoCommit       => 0,
+            FetchHashKeyName => 'NAME_lc',
+            ChopBlanks       => 1,
+            InactiveDestroy  => 1,
+        });
+    };
     unless($dbh) {
-        confess "can not connect[$dst->{dsn}]";
+        warn "can not connect[$dst->{dsn}] error[$@]";
+        return;
     }
     my $dtype;
 
