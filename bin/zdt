@@ -26,9 +26,10 @@ unless($from) {
 
 unless($from =~ /^(\d{4})(\d{2})(\d{2})$/) {
     warn "--from|-f invalid arguments";
-    $from = "$1-$2-$3";
     &usage;
 }
+$from = "$1-$2-$3";
+
 $to ||= DateTime->now(time_zone => 'local')->ymd('');
 unless($to =~ /^(\d{4})(\d{2})(\d{2})$/) {
     warn "--to|-t invalid arguments";
