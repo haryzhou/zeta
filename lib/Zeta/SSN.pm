@@ -105,7 +105,7 @@ sub next_n {
     }
 
     # 返回一个函数
-    my $cache = $self->_get_n($key, $n);
+    my $cache = $self->_get_n($key, $n, $commit);
     return sub {
         # cache的序列号用完了
         if ($cache->[3] == 0 ) {
