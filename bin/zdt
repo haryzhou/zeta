@@ -4,6 +4,7 @@ use warnings;
 use DateTime;
 use Zeta::DT;
 use Getopt::Long;
+use DBI;
 
 my $from;
 my $to;
