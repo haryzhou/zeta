@@ -68,7 +68,7 @@ while($cur ne $to) {
     if ($exec) { 
         `$exec $t`;
         if ( 0 != $?<<8) {
-            warn "load bms[$t]  failed\n";
+            warn "can not execute cmd[$exec $t] errno[$?]";
         }
     }
     else {
