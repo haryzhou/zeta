@@ -61,7 +61,7 @@ while($cur ne $to) {
 
     # 遍历工作日的话
     if ($work) {
-        next unless $dt->is_wday($t);
+        goto NEXT unless $dt->is_wday($t);
     }
     $t =~ s/-//g;
 
@@ -74,6 +74,7 @@ while($cur ne $to) {
     else {
         print "$t\n";
     }
+NEXT:
     $cur = $dt->next_n_day($cur, 1);
 }
 
