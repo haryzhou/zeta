@@ -32,9 +32,9 @@ unless($from =~ /^(\d{4})(\d{2})(\d{2})$/) {
 $to ||= DateTime->now(time_zone => 'local')->ymd('');
 unless($to =~ /^(\d{4})(\d{2})(\d{2})$/) {
     warn "--to|-t invalid arguments";
-    $to = "$1-$2-$3";
     &usage;
 }
+$to = "$1-$2-$3";
 
 # 连接数据库
 my $dbh = DBI->connect(
