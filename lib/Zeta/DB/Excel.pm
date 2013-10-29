@@ -6,8 +6,6 @@ use Spreadsheet::WriteExcel;
 use Data::Dumper;
 use Encode;
 
-
-
 #
 # Zeta::DB::Excel->new( dbh => $dbh);
 #
@@ -16,7 +14,7 @@ sub new {
     bless { @_ }, $class;
 }
 
-#
+#---------------------------------------------------------------------------------------------
 #  filename => '/tmp/xxx.xls',
 #  sheet => {
 #      分润明细 => {
@@ -36,7 +34,7 @@ sub new {
 #      book  => $book
 #      
 #  }
-#
+#---------------------------------------------------------------------------------------------
 sub excel {
     my $self = shift;
     my $args = { @_ };
@@ -68,11 +66,10 @@ use Data::Dumper;
 
 # $res->cols('Sheet1');
 # $res->rows('Sheet1');
-
 sub  rows { shift->{sheet}{+shift}{rows};              }
 sub  cols { scalar @{+shift->{sheet}{+shift}{flist}};  } 
 
-#------------------------------------------------
+#----------------------------------------------------------------
 # 
 # $self = {
 #     book  => $book
@@ -84,7 +81,7 @@ sub  cols { scalar @{+shift->{sheet}{+shift}{flist}};  }
 # $self->add_chart(
 #     type  => 'line|area|bar|column|pie|scatter|stock',
 #     name  => 'chart name',
-#     position => [ '分润1', 'A8'],
+#     position => [ '分润1', 'A8'],   # embedded or new sheet
 #     series => [
 #          {
 #              categories => {
@@ -108,7 +105,7 @@ sub  cols { scalar @{+shift->{sheet}{+shift}{flist}};  }
 #     axis_x => 'Sample number',
 #     axis_y => 'Sample length(cm)',
 # );
-#------------------------------------------------
+#----------------------------------------------------------------
 sub add_chart {
     my $self = shift;
     my $args = { @_ };
@@ -133,30 +130,24 @@ sub add_chart {
         
         my $catidx = &index($self->{sheet}{$_->{categories}{sheet}}{flist}, $_->{categories}{field});
         my $validx = &index($self->{sheet}{$_->{values}{sheet}    }{flist}, $_->{values    }{field});
-        
         my $catbeg = $_->{categories}{range}[0];
         my $catend = $_->{categories}{range}[1];
-        
         my $valbeg = $_->{values}{range}[0];
         my $valend = $_->{values}{range}[1];
         
         # warn "catidx : $catidx";
         # warn "catbeg : $catbeg";
         # warn "catend : $catend";
-        # 
         # warn "validx : $validx";
         # warn "valbeg : $valbeg";
         # warn "valend : $valend";
-        
-        my $csname = decode('utf8', $_->{categories}{sheet});
-        my $vsname = decode('utf8', $_->{values}{sheet});
-        # 
         # my $csname = $_->{categories}{sheet};
         # my $vsname = $_->{values}{sheet};
-        
         # my $catstr = "=$_->{categories}{sheet}!\$$catidx\$$catbeg:\$$catidx\$$catend";
         # my $valstr = "=$_->{values}{sheet}!\$$validx\$$valbeg:\$$validx\$$valend";
         
+        my $csname = decode('utf8', $_->{categories}{sheet});
+        my $vsname = decode('utf8', $_->{values}{sheet});
         my $catstr = "=$csname!\$$catidx\$$catbeg:\$$catidx\$$catend";
         my $valstr = "=$vsname!\$$validx\$$valbeg:\$$validx\$$valend";
         
@@ -169,26 +160,24 @@ sub add_chart {
         );
     }
     
-    if ($args->{title} ) {$chart->set_title(name => $args->{title});  }
+    if ($args->{title} ) {$chart->set_title (name => $args->{title}); }
     if ($args->{axis_x}) {$chart->set_x_axis(name => $args->{axis_x});}
     if ($args->{axis_y}) {$chart->set_y_axis(name => $args->{axis_y});}
     if ($args->{legend}) {$chart->set_legend(name => $args->{axis_y});}
     
     if ($args->{position}) {
-        # use Data::Dump;
-        # Data::Dump->dump($self->{sheet}{$args->{position}[0]});
         $self->{sheet}{$args->{position}[0]}{handle}->insert_chart($args->{position}[1], $chart);
     }
 }
 
 #
 # book写入文件关闭
+# $res->close();
 #
 sub close {
     my $self = shift;
     $self->{book}->close();
 }
-
 
 #
 # $resource->add_worksheet;
@@ -239,13 +228,13 @@ sub add_worksheet {
         }
         my @sum = @sum{@{$args->{flist}}};
         $sum[0] = decode('utf8', '合计');
-        # print Dumper(\@sum);
         $sheet->write("A$line", \@sum, $hfmt);
     }
-    
-    $self->{sheet}{$name}{handle} = $sheet;
-    $self->{sheet}{$name}{rows}   = $line;
 
+    # 返回
+    $self->{sheet}{$name}{handle} = $sheet;  # sheet handle
+    $self->{sheet}{$name}{rows}   = $line;   # 数据行数
+    return $self;
 }
 
 #

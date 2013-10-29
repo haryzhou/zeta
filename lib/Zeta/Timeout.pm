@@ -39,3 +39,17 @@ sub ztimeout {
 
 1;
 
+__END__
+
+use Zeta::Timeout;
+
+ztimeout(
+    sub {
+       return \@_;
+    },
+    [ 1, 2 ],
+    10,
+    $logger,
+    "10秒超时"
+);
+

@@ -20,7 +20,7 @@ my $rtn = GetOptions(
     "attach|a=s"  => \@attach,
     "subject|s=s" => \$sub,
     "body|b=s"    => \$body,
-    "simple|m"    => \$simple,
+    "sms|m"       => \$simple,
 );
 unless($rtn) {
     usage();
@@ -51,19 +51,15 @@ $stp->disconnect;
 
 sub usage {
     die <<'EOF';
-usage:
+Usage:
 
     # 一般用法
     zmc -t tailin.liu@yeepay.com -t ding.luo@yeeay.com \
           -c chao.zhou@yeepay.com \
-          -a ./zmail -a ./zmail \
+          -a ./zmc -a ./zmc \
           -s subject \
           -b "hello world" \
           -m 
-
-    #  -b - 代表从标志输入读取, 用于管道处理
-    cat Run.pm | zmail -t tailin.liu@yeepay.com -a ./Run.pm -s subject -b -
-
 参数说明:
     -t|--to      : 发送给谁, 可以指定多个
     -c|--cc      : 抄送给谁, 可以指定多个
@@ -72,11 +68,6 @@ usage:
     -b|--body    : 邮件正文内容('-b -'代表从标志输入读)
     -m|--sms     : 纯文本内容(适合139邮箱短信) flag
 
-
 EOF
 }
-
-
-__END__
-zmc -t 18874881230@139.com -s 'test sub' -b 'test body' -m
 

@@ -38,8 +38,16 @@ sub new {
 #
 # 数据库迁移
 # $self->tran(
-#      tbl_name => [ $nsql, \&conv, $post],
-#      tbl_name => [ $nsql, \&conv, $post],
+#     tbl_name => [ 
+#         [ $pre, $pre ],  
+#         \&conv, 
+#         [ $post, $post ] 
+#     ],
+#     tbl_name => [ 
+#         \@pre, 
+#         \&conv, 
+#         \@post
+#     ],
 # )
 #
 sub tran {
@@ -50,10 +58,10 @@ sub tran {
     my $fail = 0;
     my $success = 0;
     for my $tbl (keys %$job) {
-        my $nsql = $job->{$tbl}->[0];
+        my $pre = $job->{$tbl}->[0];
         my $conv = $job->{$tbl}->[1];
         my $post = $job->{$tbl}->[2];
-        unless( $self->table($tbl, $nsql, $conv, $post) ) {
+        unless( $self->table($tbl, $pre, $conv, $post) ) {
             $logger->info("移表[$tbl] 失败!!!!");
             ++$fail;
         } 
@@ -70,7 +78,7 @@ sub tran {
 # 表迁移
 #
 sub table {
-    my ($self, $tbl, $nsql, $conv, $post) = @_;
+    my ($self, $tbl, $pre, $conv, $post) = @_;
     my $dbh = $self->{dbh};
     my $logger = $self->{logger};
     
@@ -79,7 +87,7 @@ sub table {
     $self->rename($tbl, $old);
         
     # 建立新表
-    for (@$nsql) {
+    for (@$pre) {
         $dbh->do($_);
     }
     $dbh->commit();
