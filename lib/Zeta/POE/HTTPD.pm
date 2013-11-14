@@ -2,6 +2,7 @@ package Zeta::POE::HTTPD;
 use strict;
 use warnings;
 use base qw/Zeta::POE::TCPD/;
+use HTTP::Response;
 use constant {
     DEBUG => $ENV{ZETA_POE_HTTPD_DEBUG} || 0,
 };
@@ -28,7 +29,7 @@ sub spawn {
 #
 #
 sub _in {
-    my ($class, $in) = @_;
+    my ($class, $args, $in) = @_;
     return $in->content();
 }
 
@@ -36,7 +37,7 @@ sub _in {
 #
 #
 sub _out {
-    my ($class, $out) = @_;
+    my ($class, $args, $out) = @_;
     my $res     = HTTP::Response->new(200, 'OK');
     $res->header( "Content-Length" => length $out );
     $res->header( "Content-Type"   => "text/html;charset=utf-8" );

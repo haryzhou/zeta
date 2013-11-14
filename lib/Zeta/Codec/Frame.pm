@@ -5,6 +5,7 @@ use warnings;
 use base qw/Exporter/;
 use Carp qw/cluck/;
 use Zeta::Encode;
+use Encode;
 
 our @EXPORT_OK = qw(
   ascii_n
@@ -38,6 +39,7 @@ sub ascii_n {
 
             my $len_part = sprintf( $format, length $$stuff );
             $$stuff = $len_part . $$stuff;
+            # warn "codec send[$$stuff]";
             return;
         },
 
@@ -54,6 +56,7 @@ sub ascii_n {
             }
             my $len_part = $1;
             $len_part =~ s/^0+//g;
+            # warn "codec recv[$len_part, $$stuff][" . length($$stuff) . "]";
             return $len_part;
         },
 

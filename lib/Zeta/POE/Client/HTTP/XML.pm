@@ -1,17 +1,22 @@
-package Zeta::POE::Sink::JSON;
+package Zeta::POE::Client::HTTP::XML;
 use strict;
 use warnings;
-use base qw/Zeta::POE::Sink/;
+use base qw/Zeta::POE::Client::HTTP::JSON/;
 use JSON::XS;
+use XML::Simple;
+
+sub spawn {
+
+}
 
 sub _in {
     my ($class, $args, $in) = @_;
-    return decode_json($class->SUPER::_in($in));
+    return decode_json($class->SUPER::_in($args, $in));
 }
 
 sub _out {
     my ($class, $args, $out) = @_;
-    return $class->SUPER::_out(encode_json($out));
+    return $class->SUPER::_out($args, encode_json($out));
 }
 
 1;

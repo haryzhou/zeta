@@ -2,23 +2,15 @@ package Zeta::POE::TCPD;
 use strict;
 use warnings;
 
-use Zeta::Run;
 use POE;
 use Carp;
-use HTTP::Request;
-use HTTP::Response;
+
 use POE::Wheel::ListenAccept;
 use POE::Filter::Block;
 use POE::Wheel::ReadWrite;
 use JSON::XS;
 use Zeta::Codec::Frame qw/ascii_n binary_n/;
-use constant {
-    DEBUG => $ENV{ZETA_POE_TCP_DEBUG} || 0,
-};
-
-BEGIN {
-    require Data::Dump if DEBUG;
-}
+use Data::Dumper;
 
 sub spawn {
     my $class = shift;
@@ -30,6 +22,7 @@ sub spawn {
 # (
 #    ip      => '192.168.1.10',
 #    port    => '9999',
+#
 #    module  => 'XXX::Admin',
 #    para    => 'xxx.cfg',
 #    codec   => ''
@@ -37,45 +30,61 @@ sub spawn {
 #    events  => {
 #        event => sub {},
 #    },
+#    permanent => 1,       # 长连接
+#    debug   => 1, 
 # )
 # -----------------------------------
 # 参数方式2:
 # (
 #    lfd     => $lfd,
+#
 #    module  => 'XXX::Admin',
 #    para    => 'xxx.cfg',
+#
 #    codec   => '',
 #    alias   => 'tcpd'
 #    events  => {
 #        event => sub {},
 #    },
+#    permanent => 1,       # 长连接
+#    debug   => 1, 
 # )
 # -----------------------------------
 # 参数方式3:
 # (
 #    lfd      => $lfd,
+#
 #    callback => \&func,
 #    context  => $context,
-#    codec    => 'ascii n, binary n, http'
-#    alias   => 'tcpd'
+#
+#    codec    => 'ascii n, binary n, http',
+#    alias   => 'tcpd',
+#
 #    events  => {
 #        event => sub {},
 #    },
+#    permanent => 1,       # 长连接
+#    debug   => 1, 
 # )
 #
 sub _spawn {
 
     my $class = shift;
     my $args  = {@_};
-    Data::Dump->dump($args) if DEBUG;
+    # warn Dumper($args);
 
+    # 其他事件处理注册
     my $events = delete $args->{events};
+
+    my $debug     = delete $args->{debug};
+    my $permanent = delete $args->{permanent} || 0;
 
     # 直接提供了lfd
     unless($args->{lfd}) {
         confess "port needed" unless $args->{port};
     }
 
+    # 回调函数准备
     my $callback;
     my $ctx;
     if ($args->{callback}) {
@@ -90,29 +99,30 @@ sub _spawn {
         confess "can not load module[$args->{module}] error[$@]" if $@;
 
         # 构造管理对象
-        $ctx = $args->{module}->new( @{$args->{para}} ) 
-          or confess "can not new $args->{module} with " . Data::Dump->dump( $args->{para} );
+        my $para = delete $args->{para};
+        $ctx = $args->{module}->new( @{$para} ) 
+          or confess "can not new $args->{module} with " . Dumper( $para );
 
         $callback = \&{"$args->{module}::handle"};
     }
 
-    # 过滤器
+    # 过滤器准备
     my $filter;
     my $fargs;
-    unless($args->{codec}) {
+    my $codec = delete $args->{codec};
+    unless($codec) {
         confess "codec is needed";
     }
-    if ($args->{codec} =~ /ascii (\d+)/) {
+    
+    if ($codec =~ /ascii (\d+)/) {
         $filter = 'POE::Filter::Block'; 
         $fargs  = [ LengthCodec => ascii_n($1) ];
-        require POE::Filter::HTTPD;
     }
-    elsif($args->{codec} =~ /binary (\d+)/) {
+    elsif($codec =~ /binary (\d+)/) {
         $filter = 'POE::Filter::Block'; 
         $fargs  = [ LengthCodec => binary_n($1) ];
-        require POE::Filter::HTTPD;
     }  
-    elsif($args->{codec} =~ /http/) {
+    elsif($codec =~ /http/) {
         $filter = 'POE::Filter::HTTPD';
         $fargs = [];
         require POE::Filter::HTTPD;
@@ -120,20 +130,26 @@ sub _spawn {
     else {
         confess "codec must be either of [ascii N, binary n, http]";
     }
+    
 
     # 创建POE
     my @events = () || %$events if $events;
+    my $lfd = delete $args->{lfd};
+    my $port = delete $args->{port};
+    
     return POE::Session->create(
         inline_states => {
             _start => sub {
-                $_[KERNEL]->alias_set($args->{alias} || 'tcpd');
+                $_[KERNEL]->alias_set(delete $args->{alias} || 'tcpd');
+                $lfd ||= IO::Socket::INET->new(
+                    LocalPort => $port,
+                    Listen    => 5,
+                    Proto     => 'tcp',
+                    ReuseAddr => 1,
+                );
+                            
                 $_[HEAP]{la} = POE::Wheel::ListenAccept->new(
-                    Handle => $args->{lfd} || IO::Socket::INET->new(
-                        LocalPort => $args->{port},
-                        Listen    => 5,
-                        Proto     => 'tcp',
-                        ReuseAddr => 1,
-                    ),
+                    Handle      => $lfd,
                     AcceptEvent => "on_client_accept",
                     ErrorEvent  => "on_server_error",
                 );
@@ -145,6 +161,7 @@ sub _spawn {
             # 收到连接请求
             on_client_accept => sub {
                 my $cli = $_[ARG0];
+                # binmode $cli, ':encoding(utf8)';
                 my $w   = POE::Wheel::ReadWrite->new(
                     Handle       => $cli,
                     InputEvent   => 'on_client_input',
@@ -160,10 +177,18 @@ sub _spawn {
 
                 # 接收请求
                 eval {
-                    my $req = $class->_in($_[ARG0]);
-                    warn "recv request: \n" . Data::Dump->dump($req) if DEBUG;
-                    my $res = $callback->($ctx, $req);
-                    $_[HEAP]{client}{$_[ARG1]}->put($class->_out($res));
+                    warn "recv request: \n" . Dumper($_[ARG0])  if $debug;
+                    my $req = $class->_in($args, $_[ARG0]);
+                    # warn "recv request: \n" . Dumper($req)  if $debug;
+                    
+                    # 回调处理
+                    my $res = $callback->($ctx, $req); 
+                    # warn "result: " . Dumper($res) if $debug;
+                                       
+                    $res = $class->_out($args, $res);
+                    warn "send response: \n"  . Dumper($res) if $debug;
+                
+                    $_[HEAP]{client}{$_[ARG1]}->put($res);
                 };
                 if ($@) {
                    warn "can not process request, error[$@]";
@@ -187,19 +212,22 @@ sub _spawn {
 
             # 发送完毕
             on_flush => sub {
-                delete $_[HEAP]{client}{$_[ARG0]};
+                warn "on_flush permanent[$permanent]" if $debug;
+                unless($permanent) {
+                    delete $_[HEAP]{client}{$_[ARG0]};
+                }
             }
         },
     );
 }
 
 sub _in {
-    my ($class, $in) = @_;
+    my ($class, $args, $in) = @_;
     return $in;
 }
 
 sub _out {
-    my ($class, $out) = @_;
+    my ($class, $args, $out) = @_;
     return $out;
 }
 

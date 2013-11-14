@@ -49,7 +49,7 @@ sub num2bin {
             $res = chr( ord('A') + $res - 10 );
         }
         unshift @data, $res;
-        $num int($num/16);
+        $num = int($num/16);
         last if $num == 0;
     }
     my $str = join '', @data;

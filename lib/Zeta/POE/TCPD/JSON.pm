@@ -3,7 +3,6 @@ use strict;
 use warnings;
 use base qw/Zeta::POE::TCPD/;
 use JSON::XS;
-use Data::Dump;
 
 sub _in {
     my ($class, $in) = @_;

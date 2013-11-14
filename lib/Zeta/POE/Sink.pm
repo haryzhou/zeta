@@ -1,12 +1,8 @@
 package Zeta::POE::Sink;
 use strict;
 use warnings;
-
-use Zeta::Run;
 use POE;
 use Carp;
-use HTTP::Request;
-use HTTP::Response;
 use POE::Wheel::ListenAccept;
 use POE::Filter::Block;
 use POE::Wheel::ReadWrite;
