@@ -31,8 +31,10 @@ sub _in {
     my ($class, $args, $in) = @_;
     
     unless($args->{charset} eq 'utf8' ) {
-        $in = encode('utf8', decode($args->{charset},$in));
+        # $in = encode('utf8', decode($args->{charset},$in));
+        $in = decode($args->{charset},$in);
     }
+    warn "_in utf8[$in]";
     return XMLin($in);
 }
 
@@ -45,16 +47,23 @@ sub _out {
     # 
     # warn "begin XMLout(" . Dumper($out) . ")";
     my $res = XMLout($out, NoAttr => 1, RootName => $args->{RootName});
+    warn "_out utf8[$res]";
     
     # warn "kkkkkkkkkkkkkkkkkkkout[$res]";
     unless($args->{charset} eq 'utf8' ) {
         # $res = encode($args->{charset}, decode('utf8', $res));   #  如gbk编码
         $res = encode($args->{charset}, $res);   #  如gbk编码
-        return $res;
     }
     else {
-        return encode('utf8', $res);
+        eval {
+           $res = encode('utf8', $res);   
+        };
+        if ($@) {
+            warn "can not decode('utf8', [$res]) error[$@]";
+            die __PACKAGE__ . "_out eror";
+        }
     }
+    return $res;
 }
 
 1;
