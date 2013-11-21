@@ -14,13 +14,15 @@ use Data::Dumper;
 #  para    => 'para',
 #
 #  charset  => 'gbk/utf8',
-#  RootName =>
+#  RootName => 'opreq',
+#  XMLDecl  => '<?xml version="1.0" encoding="GBK"?>'
 #
 sub spawn {
     my $class = shift;
     my $args = { @_ };
-    $args->{charset} ||= 'utf8';
+    $args->{charset}  ||= 'utf8';
     $args->{RootName} ||= 'NoRoot';
+    $args->{XMLDecl}  ||= undef;
     $class->_spawn(%$args);
 }
 
@@ -34,6 +36,7 @@ sub _in {
         # $in = encode('utf8', decode($args->{charset},$in));
         $in = decode($args->{charset},$in);
     }
+    $in =~ s/^\s*<\?.+\?>//;
     warn "_in utf8[$in]";
     return XMLin($in);
 }
@@ -46,7 +49,14 @@ sub _out {
     
     # 
     # warn "begin XMLout(" . Dumper($out) . ")";
-    my $res = XMLout($out, NoAttr => 1, RootName => $args->{RootName});
+    my $res = XMLout(
+        $out, 
+        NoAttr   => 1, 
+        RootName => $args->{RootName},
+    );
+    if ($args->{XMLDecl}) {
+        $res = $args->{XMLDecl} . "\n" . $res;
+    }
     warn "_out utf8[$res]";
     
     # warn "kkkkkkkkkkkkkkkkkkkout[$res]";

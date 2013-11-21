@@ -9,6 +9,7 @@ use Data::Dumper;
 #
 # charset  => 'utf8',
 # RootName => 'NoRoot',
+# XMLDecl  => '<?xml version="1.0" encoding="GBK"?>
 #
 sub spawn {
     my $class = shift;
@@ -30,6 +31,7 @@ sub _in {
         # warn "got now[$in]";
     }
     warn "_in utf8[$in]";
+    $in =~ s/^\s*<\?.+\?>//;
     return XMLin($in);
 }
 
@@ -39,7 +41,13 @@ sub _in {
 sub _out {
     my ($class, $args, $out) = @_;
     # warn "begin XMLout(" . Dumper($out) . ")";
-    my $res = XMLout($out, NoAttr => 1, RootName => $args->{RootName});
+    my $res = XMLout($out, 
+        NoAttr   => 1, 
+        RootName => $args->{RootName},
+    );
+    if ($args->{XMLDecl}) {
+        $res = $args->{XMLDecl} . "\n" . $res;
+    }
     warn "_out utf8[$res]";
 
     unless($args->{charset} eq 'utf8') {
