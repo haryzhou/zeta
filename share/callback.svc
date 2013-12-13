@@ -1,0 +1,5 @@
+sub {
+    my ($ctx, $req) = @_;
+    my $msg = "hello world";
+    return sprintf("%04d", length($msg)) . $msg;
+};
