@@ -52,6 +52,19 @@ unless($fcb) {
    &usage;
 }
 
+# codec
+unless($codec =~ /^(ascii\s+\d{1,}|binary\s+\d{1,}|http)$/) {
+    unless( -f $codec) {
+        warn "file[$codec] does not exist";
+        &usage;
+    }
+    $codec = do $codec;
+    if ($@) {
+        warn "can not do file[$codec] error[$@]";
+        &usage;
+    } 
+}
+
 ##############################
 if ($mode =~ /tcpd/) {
    eval "use Zeta::POE::TCPD;";
@@ -92,6 +105,6 @@ usae: zsvc -h 192.168.1.10 \
            -p 8888 \
            -c /tmp/callback.pl \
            -m httpd|tcpd \
-           --codec 'ascii 4' 
+           --codec 'ascii 4|datfile.codec' 
 EOF
 }
