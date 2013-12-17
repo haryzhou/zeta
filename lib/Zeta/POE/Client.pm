@@ -23,7 +23,7 @@ sub spawn {
 #  port => 8888,
 #  ocb  => \&ocb,   # 发送数据处理
 #  icb  => \&icb,   # 接受数据处理
-#  codec => 'ascii n, binary n, http',
+#  codec => 'ascii n, binary n, http, [\&encode, \&decode]',
 #  single => 1,
 #  debug  => 1,
 #
@@ -38,21 +38,27 @@ sub _spawn {
     unless($codec) {
         confess "codec is needed";
     }
-    if ($codec =~ /ascii (\d+)/) {
+    if ('ARRAY' eq ref $codec) {
         $filter = 'POE::Filter::Block';
-        $fargs  = [ LengthCodec => ascii_n($1) ];
-    }
-    elsif($codec =~ /binary (\d+)/) {
-        $filter = 'POE::Filter::Block';
-        $fargs  = [ LengthCodec => binary_n($1) ];
-    }
-    elsif($codec =~ /http/) {
-        $filter = 'POE::Filter::HTTP::Parser';
-        $fargs = [];
-        require POE::Filter::HTTP::Parser;
+        $fargs  = [ LengthCodec => $codec ];
     }
     else {
-        confess "codec must be either of [ascii N, binary n, http]";
+        if ($codec =~ /ascii (\d+)/) {
+            $filter = 'POE::Filter::Block';
+            $fargs  = [ LengthCodec => ascii_n($1) ];
+        }
+        elsif($codec =~ /binary (\d+)/) {
+            $filter = 'POE::Filter::Block';
+            $fargs  = [ LengthCodec => binary_n($1) ];
+        }
+        elsif($codec =~ /http/) {
+            $filter = 'POE::Filter::HTTP::Parser';
+            $fargs = [];
+            require POE::Filter::HTTP::Parser;
+        }
+        else {
+            confess "codec must be either of [ascii N, binary n, http]";
+        }
     }
     
     my $ocb    = delete $args->{ocb};

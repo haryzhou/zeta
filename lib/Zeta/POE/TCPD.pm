@@ -25,7 +25,7 @@ sub spawn {
 #
 #    module  => 'XXX::Admin',
 #    para    => 'xxx.cfg',
-#    codec   => ''
+#    codec   => 'ascii 4, binary 2, http, [\&encode, \&decode]'
 #    alias   => 'tcpd'
 #    events  => {
 #        event => sub {},
@@ -113,22 +113,28 @@ sub _spawn {
     unless($codec) {
         confess "codec is needed";
     }
-    
-    if ($codec =~ /ascii (\d+)/) {
+
+    if ('ARRAY' eq  ref $codec) {
         $filter = 'POE::Filter::Block'; 
-        $fargs  = [ LengthCodec => ascii_n($1) ];
-    }
-    elsif($codec =~ /binary (\d+)/) {
-        $filter = 'POE::Filter::Block'; 
-        $fargs  = [ LengthCodec => binary_n($1) ];
-    }  
-    elsif($codec =~ /http/) {
-        $filter = 'POE::Filter::HTTPD';
-        $fargs = [];
-        require POE::Filter::HTTPD;
+        $fargs  = [ LengthCodec => $codec ];
     }
     else {
-        confess "codec must be either of [ascii N, binary n, http]";
+        if ($codec =~ /ascii (\d+)/) {
+            $filter = 'POE::Filter::Block'; 
+            $fargs  = [ LengthCodec => ascii_n($1) ];
+        }
+        elsif($codec =~ /binary (\d+)/) {
+            $filter = 'POE::Filter::Block'; 
+            $fargs  = [ LengthCodec => binary_n($1) ];
+        }  
+        elsif($codec =~ /http/) {
+            $filter = 'POE::Filter::HTTPD';
+            $fargs = [];
+            require POE::Filter::HTTPD;
+        }
+        else {
+            confess "codec must be either of [ascii N, binary n, http]";
+        }
     }
     
 
