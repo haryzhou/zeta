@@ -31,7 +31,6 @@ sub _spawn {
     my $class = shift;
     my $args = { @_ };
     
-    
     # 过滤器准备
     my $filter;
     my $fargs;
