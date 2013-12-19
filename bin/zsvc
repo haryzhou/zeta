@@ -52,21 +52,21 @@ unless($fcb) {
    &usage;
 }
 
-# codec
-unless($codec =~ /^(ascii\s+\d{1,}|binary\s+\d{1,}|http)$/) {
-    unless( -f $codec) {
-        warn "file[$codec] does not exist";
-        &usage;
-    }
-    $codec = do $codec;
-    if ($@) {
-        warn "can not do file[$codec] error[$@]";
-        &usage;
-    } 
-}
 
 ##############################
 if ($mode =~ /tcpd/) {
+    # codec
+    unless($codec =~ /^(ascii\s+\d{1,}|binary\s+\d{1,}|http)$/) {
+        unless( -f $codec) {
+            warn "file[$codec] does not exist";
+            &usage;
+        }
+        $codec = do $codec;
+        if ($@) {
+            warn "can not do file[$codec] error[$@]";
+            &usage;
+        } 
+   }
    eval "use Zeta::POE::TCPD;";
    if ($@) {
        die "use Zeta::POE::TCPD error[$@]";
