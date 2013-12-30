@@ -246,26 +246,26 @@ sub index {
     my $idx = 0;
     for (@$flist) {
         if ($fld eq $_) {
-            return &_index($idx);
+            return &to_excel_col($idx);
         }
         $idx++;
     }
 }
 
 #  Excel的列index计算
-sub _index {
-    my $idx = shift;
-    # warn "calc _index($idx)";
-    my @data;
-    while(1) {
-        my $res = $idx % 26;
-        unshift @data, chr(ord('A')+$res); 
-        $idx = int($idx/26);
-        # warn "idx now[$idx]";
-        last if $idx == 0;
-    } 
-    return join '', @data;
-}
+# sub _index {
+#     my $idx = shift;
+#     # warn "calc _index($idx)";
+#     my @data;
+#     while(1) {
+#         my $res = $idx % 26;
+#         unshift @data, chr(ord('A')+$res); 
+#         $idx = int($idx/26);
+#         # warn "idx now[$idx]";
+#         last if $idx == 0;
+#     } 
+#     return join '', @data;
+# }
 
 1;
 

@@ -10,6 +10,8 @@ our @EXPORT = qw/
   num2bcd
   bin2num
   num2bin
+  to_excel_col
+  from_excel_col
 /;
 
 ############################################
@@ -79,6 +81,41 @@ sub bin2num {
         $base *= 16;
     }
     return $num;
+}
+
+#
+# 数字变Excel字母
+# 27 => BA
+#
+sub to_excel_col {
+    my $idx = shift;
+    # warn "calc _index($idx)";
+    my @data;
+    while(1) {
+        my $res = $idx % 26;
+        unshift @data, chr(ord('A')+$res);
+        $idx = int($idx/26);
+        # warn "idx now[$idx]";
+        last if $idx == 0;
+    }
+    return join '', @data;
+}
+
+#
+# 从excel column to index(0..);
+# A - Z,  BA
+# 0 - 26, 27
+#
+sub from_excel_col {
+    my @chr = split '', +shift;
+    my $i = 0;
+    my $idx = 0;
+    while(@chr) {
+       my $c = pop @chr;
+       my $k = ord($c) - ord('A') + 1;
+       $idx += $k * (26 ** $i++);
+    }
+    return $idx - 1;
 }
 
 1;
