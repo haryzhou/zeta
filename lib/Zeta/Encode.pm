@@ -10,8 +10,11 @@ our @EXPORT = qw/
   num2bcd
   bin2num
   num2bin
+
   to_excel_col
   from_excel_col
+  to_excel_cell
+  from_excel_cell
 /;
 
 ############################################
@@ -111,11 +114,28 @@ sub from_excel_col {
     my $i = 0;
     my $idx = 0;
     while(@chr) {
-       my $c = pop @chr;
-       my $k = ord($c) - ord('A') + 1;
-       $idx += $k * (26 ** $i++);
+        my $c = pop @chr;
+        my $k = ord($c) - ord('A');
+        $idx += $k * (26 ** $i++);
     }
-    return $idx - 1;
+    return $idx;
+}
+
+#
+#  'A1'  =>  [0, 0]
+#
+sub from_excel_cell {
+    my $str = shift;
+    $str =~ /([A-Z]+)(\d+)$/;
+    return [ $2 - 1,  from_excel_col($1) ];
+}
+
+#
+# [0,0] => 'A1'
+#
+sub to_excel_cell {
+    my ($x, $y) = @_;
+    return [ $x + 1,  to_excel_col($y) ];
 }
 
 1;
