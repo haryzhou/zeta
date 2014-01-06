@@ -121,12 +121,12 @@ sub nhash {
 }
 
 ###########################################################
-# $self->load($file);
+# $self->load($file, \%opt);
 #    加载文件
 ###########################################################
 sub load {
-    my $self = shift;
-    my $file = shift;
+    my ($self, $file, $opt) = @_;
+
     my $fh = IO::File->new("<$file");
     
     my $batch = 0;
@@ -138,10 +138,10 @@ sub load {
     while(<$fh>) {
        
         if ($pre) { 
-            next unless $_ = $pre->($_);      # 预处理
+            next unless $_ = $pre->($_, $opt);      # 预处理
         }
-        my $fld = $self->{rsplit}->($_);      # 分割处理
-        my $row = $self->{rhandle}->($fld);   # 分割后处理
+        my $fld = $self->{rsplit}->($_, $opt);      # 分割处理
+        my $row = $self->{rhandle}->($fld, $opt);   # 分割后处理
         # warn "execute[@$row]\n";
         # use Data::Dumper;
         # print Dumper($self->{sth});
@@ -181,18 +181,20 @@ sub load {
 }
 
 ###########################################################
-# $load->load_xls($file, $sheet, $rmin)
-#    加载xls文件
+# $load->load_xls(
+#     $file,    # xls文件名称
+#     $sheet,   # sheet名称, 或者是index
+#     $rmin,    # 从哪一行开始
+#     \%opt     # 其他定制参数, 给回调函数用的
+# )
+# 加载xls文件
 ###########################################################
 sub load_xls {
-    my $self  = shift;
-    my $file  = shift;
-    my $shidx = shift;
-    my $rmin  = shift;
+    my ($self, $file, $shidx, $rmin, $opt) = @_;
     
     my $parser = Spreadsheet::ParseExcel->new();
     my $wb     = $parser->parse($file);
-    my $sheet  = $wb->worksheet($shidx);
+    my $sheet  = $wb->worksheet($shidx);      # 可能是个bug, 如果sheet名称为中文
     my $rmax   = ($sheet->row_range())[1];
     
     my $cidx;
@@ -200,7 +202,7 @@ sub load_xls {
         $cidx = $self->{rsplit};
     }
     elsif('CODE' eq ref $self->{rsplit}) {
-        $cidx = $self->{rsplit}->();
+        $cidx = $self->{rsplit}->($opt);
     }
     unless($cidx && 'ARRAY' eq ref $cidx && @$cidx ) {
         die "load_xls need rsplit [] or subroutine return []";
@@ -218,8 +220,8 @@ sub load_xls {
     my $batch = 0;
     my $cnt = 0;
     for my $ridx ($rmin .. $rmax) {
-        my $fld = $xls_row->($sheet, $ridx, $cidx);
-        my $row = $self->{rhandle}->($fld);
+        my $fld = $xls_row->($sheet, $ridx, $cidx, $opt);
+        my $row = $self->{rhandle}->($fld, $opt);
        
         # use Data::Dump;
         # Data::Dump->dump($row); 
@@ -256,12 +258,16 @@ sub load_xls {
 }
 
 ###########################################################
-# &xls_row($sheet,$ridx, [qw/cidx1 cidx2 .../]);
+# &xls_row(
+#     $sheet,                # Sheet对象
+#     $ridx,                 # 第几行
+#     [qw/cidx1 cidx2 .../], # 取哪些列
+#     $opt                   # 其他参数
+# );
 #    默认的获取xls行的函数
 ###########################################################
 sub xls_row {
-    my $sheet = shift;
-    my ($ridx, $cidx) = @_;
+    my ($sheet, $ridx, $cidx, $opt) = @_;
     my @row;
     for (@$cidx) {
         my $cell = $sheet->get_cell($ridx, $_);
