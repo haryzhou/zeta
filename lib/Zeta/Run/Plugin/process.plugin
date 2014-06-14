@@ -321,7 +321,7 @@ helper process_runall => sub {
         else {
             $child = $self->process_new($m);
         }
-        sleep 2;
+        sleep 0.2;
     }
 
     # for my $mname ( keys %$mlist ) {
